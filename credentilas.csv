@@ -1,0 +1,9 @@
+﻿,Implement API,,
+,Endpoint Type,HTTP/REST Endpoint,
+,Development HTTPS URL,https://soapbeta.streamflow.ca/vandvapi/,
+,Production HTTPS URL,https://soap.streamflow.ca/vandvapi/,
+,,,
+URL Information,,,
+API Name,,Production,Development
+GetPartsInfo,,https://soap.streamflow.ca/vandvapi/GetPartsInfo,https://soapbeta.streamflow.ca/vandvapi/GetPartsInfo
+CreatePartOrder,,https://soap.streamflow.ca/vandvapi/CreatePartOrder,https://soapbeta.streamflow.ca/vandvapi/CreatePartOrder

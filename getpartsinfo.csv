@@ -1,0 +1,55 @@
+﻿Client API,"TYPE
+(Request/Response)","Level 1 entity
+(Adress)","Level 2
+(Structure, Table)","Level 3
+(Structure, Table)",Property,data type,length,decimals,Description,Required,Option1,Sample data
+,,,,,,,,,,,,
+GetPartsInfo ,Request,,"commonHeader
+(Structure)",,user,CHAR,25, ,User,Mandatory,, 
+,,,,,password,CHAR,25, ,Password,Mandatory,, 
+,,,mfgCode,,mfgCode,CHAR,18, ,Manufacturer Code,Mandatory, ,SAM 
+,,,partNumber,,partNumber,CHAR,18, ,Parts Number,Mandatory, ,BN94-10751C
+,Response,Return,"commonResult
+(Structure)",,code,CHAR,10,,Code,,,
+,,,,,codeDesc,CHAR,25,,Code Description,,,
+,,,,,msgID,CHAR,5, ,Message ID,,, 
+,,, ,,retCode,CHAR,10,0,Return Code,,,
+,,, ,,retMsg,CHAR,200,0,Return Error Message,,,
+,,,"partData
+(Structure)",,partNumber,CHAR,25, ,Parts Number,,,BN94-10751C
+,,,,,mfgCode,CHAR,3, ,Manufacturer Code,,,
+,,,,,subbed,CHAR,1, ,Substitution Part Available,,,
+,,,,,partDescription,CHAR,40, ,Part Description,,,
+,,,,,quantityOnHand,CHAR,9,0,Quantity on Hand,,,
+,,,,,retailPrice,CHAR,9,0,Retail Price,,,
+,,,,,partPrice,CHAR,9,0,Part Price,,,
+,,,,,corePrice,CHAR,9,0,Core Price,,,
+,,,,,totalPrice,CHAR,9,0,Total Price,,,
+,,,,,discontinued,CHAR,1,,Discontinued flag,Blanks,,
+,,,,,dropShipOnly,CHAR,1,,DropShipOnly flag,Blanks,,
+,,,,,refrigerant,CHAR,1,,Refrigerant flag,Blanks,,
+,,,,,hazmat,CHAR,1,,Hazmat flag,Blanks,,
+,,,,,oversize,CHAR,1,,Oversize flag,Mandatory,,1=true; 0=false
+,,,,availableLocation (Structure),locationId,CHAR,10, ,Location ID,,,
+,,,,,countryCode,CHAR,10, ,Country Code,,,
+,,,,,locationName,CHAR,25,,Location Name,,,
+,,,,,availableQuantity,CHAR,9,0,Available Quantity,,,
+,,"subPartData
+(Table)",,,partNumber,CHAR,25, ,Parts Number,,,BN94-10751C
+,,,,,mfgCode,CHAR,3, ,Manufacturer Code,,,
+,,,,,subbed,CHAR,1, ,Substitution Part Available,,,
+,,,,,partDescription,CHAR,40, ,Part Description,,,
+,,,,,quantityOnHand,CHAR,9,0,Quantity on Hand,,,
+,,,,,retailPrice,CHAR,9,0,Retail Price,,,
+,,,,,partPrice,CHAR,9,0,Part Price,,,
+,,,,,corePrice,CHAR,9,0,Core Price,,,
+,,,,,totalPrice,CHAR,9,0,Total Price,,,
+,,,,,discontinued,CHAR,1,,Discontinued flag,Blanks,,
+,,,,,dropShipOnly,CHAR,1,,DropShipOnly flag,Blanks,,
+,,,,,refrigerant,CHAR,1,,Refrigerant flag,Blanks,,
+,,,,,hazmat,CHAR,1,,Hazmat flag,Blanks,,
+,,,,,oversize,CHAR,1,,Oversize flag,Mandatory,,1=true; 0=false
+,,,availableLocation (Structure),,locationId,CHAR,10, ,Location ID,,,
+,,,,,countryCode,CHAR,10, ,Country Code,,,
+,,,,,locationName,CHAR,25,,Location Name,,,
+,,,,,availableQuantity,CHAR,9,0,Available Quantity,,,

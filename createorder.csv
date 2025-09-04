@@ -1,0 +1,62 @@
+﻿Client API,TYPE,Level 1 entity,Level 2,Property,data type,length,decimals,Description,Required,Option1,Sample data
+,(Request/Response),(Adress),"(Structure, Table)",,,,,,,,
+CreatePartOrder,Request,ImportSet,commonHeader,user,CHAR,25, ,User,Mandatory,, 
+,,,(Structure),password,CHAR,25, ,Password,Mandatory,, 
+,,,poHeader (Structure),poNumber,CHAR,18,0,Part Order Number,Mandatory, ,1231231360
+,,,,shippingMethod,CHAR,2,0,Shipping Method,Mandatory,,UPS
+,,,,,,,,================,,,
+,,,,,,,,UPS: FedEx Ground,,,
+,,,,,,,,UP2: FedEx 2nd day air,,,
+,,,,,,,,UP1: FedEx Overnight,,,
+,,,,shipFrom,INT,3,0,Location to Ship Order From,,,101
+,,,,poType,CHAR,1,0,PO Type,,,1
+,,,,,,,,========,,,
+,,,,,,,,1: Stock Keeping,,,
+,,,,,,,,2: Pending Repair,,,
+,,,,,,,,5: Forecasting,,,
+,,,shipAddress,addressFlag,CHAR,1,0,Change ship to address for this oder Flag,,,Y
+,,,(Structure),customerName,CHAR,40,0,Name,Mandatory,, HOME SERVICE NETWORK
+,,,,address,CHAR,40,0,Street,Mandatory,,49 COMMERCE RD
+,,,,city,CHAR,40,0,City,Mandatory,,CARLSTADT
+,,,,zipCode,CHAR,10,0,Zip/Postal Code ,Mandatory,,NJ
+,,,,state,CHAR,10,0,State/Province ,Mandatory,,12312
+,,,,phoneNumber,CHAR,40,0,Contact Phone ,,,321548956
+,,,,emailAddress,CHAR,200,0,Email Address,,,
+,,poItems,poItems,partNumber,CHAR,18, ,Parts Number,Mandatory, ,ASDFTWSDF1234
+,,(Table),(Table),mfgCode,CHAR,18, ,Manufacturing Cod,Mandatory, ,SAM
+,,,,orderQuantity,CHAR,9,0,Quantity,Mandatory, ,1
+,,,,lineNote,CHAR,255,,Line Level PO # / Note / Identifier,,,
+,Response,ExportSet,commonResult,code,CHAR,10,,Code,Mandatory,,
+,,(Return),(Structure),codeDesc,CHAR,25,,Code Description,Mandatory,,
+,,,,msgID,CHAR,5, ,Message ID,,, 
+,,, ,retCode,CHAR,10,0,Return Code,Mandatory,,
+,,, ,retMsg,CHAR,200,0,Return Error Message,Mandatory,,
+,,PoResult,poResult,returnFlag,CHAR,5,0,ReturnFlag,,,0
+,,(Table),(Table),poDate ,CHAR,8,0,PO Date ,Mandatory,,20201102
+,,,,shipToBranch,CHAR,10,0,Ship-to-Branch,,,123123136
+,,,,poNo,CHAR,14, ,Customer  Part Order Number,Mandatory,,123456789-000
+,,,,poItemNo,CHAR,10,0,Item Number of the Underlying Purchase Order,essential ,,10
+,,,,orderedParts,CHAR,35,0,Ordered Parts,Mandatory,,GH97-06308A
+,,,,opMfgCode,CHAR,3,,Ordered Manufacturing Code,Mandatory,,
+,,,,shippedParts ,CHAR,35,0,Shipped Parts , ,,GH97-06308A
+,,,,spMfgCode,CHAR,3,,Shipped Manufacturing Code, ,,
+,,,,vOrderNo,CHAR,25,0,Vendor Order Number,Mandatory,,100021563
+,,,,poQty ,CHAR,15,0,P/O Qty ,Mandatory,,1
+,,,,description,CHAR,60,0,Description,,,"MEA-LCD MODULE KIT;SGH-D900,DTM,GERM,LCD"
+,,,,remark,CHAR,100,,Line Level Message,,,
+,,,,ETA,CHAR,100,,Estimated Time of Arrival,essential ,,
+,,,,shipFromLocation,CHAR,15,0,Ship From Location Number,essential ,,
+,,,,shipFrom,CHAR,60,0,Ship From Location Name,essential ,,
+,,,,shippingMethod,CHAR,100,,Shipping Method,essential ,,
+,,,,,,,,================,,,
+,,,,,,,,UPS: FedEx Ground,,,
+,,,,,,,,UP2: FedEx 2nd day air,,,
+,,,,,,,,UP1: FedEx Overnight,,,
+,,,,unitPrice,DEC,28,6,Unit Price(Tax is not included) ,essential ,,27.29
+,,,,amount,DEC,28,6,Amount,,,27.29
+,,,,qtyShipped,CHAR,28,6,Qty Being Shipped,,,
+,,,,qtyBackordered,CHAR,28,6,Qty on Backorder,,,
+,,,,partPrice,CHAR,28,6,Price to Customer,,,
+,,,,retailPrice,CHAR,28,6,Retail Price,,,
+,,,,corePrice,CHAR,28,6,Core Price if Available,,,
+,,,,stockStatus,CHAR,1,0,Stock status,,,N

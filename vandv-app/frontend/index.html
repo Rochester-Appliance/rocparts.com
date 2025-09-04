@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V&V Parts Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>V&V Parts & Diagrams</h1>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="parts-tab">Parts</button>
+            <button class="tab-button" data-tab="diagrams-tab">Diagrams</button>
+        </div>
+        <div id="parts-tab" class="tab-content active">
+            <h2>Parts Search</h2>
+            <div class="search-container">
+                <input type="text" id="mfgCode" placeholder="Manufacturer Code (e.g., WHP)">
+                <input type="text" id="partNumber" placeholder="Part Number (e.g., 80040)">
+                <button id="searchPartsBtn">Search Parts</button>
+            </div>
+        </div>
+        <div id="diagrams-tab" class="tab-content">
+            <h2>Diagram Search</h2>
+            <div class="search-container">
+                <input type="text" id="modelSearch" placeholder="Model Number (partial ok)">
+                <button id="searchModelsBtn">Find Models</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="selectedModelNumber" placeholder="Selected Model Number">
+                <input type="text" id="selectedModelId" placeholder="Selected Model ID">
+                <button id="getDiagramsBtn">Get Diagrams</button>
+            </div>
+        </div>
+        <div class="controls">
+            <label><input type="checkbox" id="toggleJson"> Show raw JSON</label>
+        </div>
+        <div id="api-status-container"></div>
+        <div id="results-container"></div>
+        <div id="error-container"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
