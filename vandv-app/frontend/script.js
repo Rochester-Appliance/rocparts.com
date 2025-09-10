@@ -96,7 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayResults(data, 'diagrams');
                 const first = Array.isArray(data) && data.length ? data[0] : null;
                 if (first && first.diagramId) {
-                    selectDiagram(first.diagramId, first.diagramLargeImage);
+                    selectDiagram(first.diagramId, first.diagramLargeImage, first.sectionName);
+                    setSelectedCard(first.diagramId);
                 }
             })
             .catch(error => {
@@ -233,19 +234,19 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="split">
             <div>
               <h3>Diagrams</h3>
-              <div class="grid">
+              <div id="diagram-list" class="grid">
                 ${diagrams.map(d => `
-                  <div class="card diagram-card" data-role="diagram-card" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}">
+                  <div class="card diagram-card" data-role="diagram-card" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">
                     <img src="${sanitize(d.diagramSmallImage)}" alt="${escapeAttr(d.sectionName)}" />
                     <div><strong>${sanitize(d.sectionName)}</strong></div>
                     <div>ID: ${sanitize(d.diagramId)}</div>
-                    <button data-role="pick-diagram" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}">Select</button>
+                    <button data-role="pick-diagram" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">Select</button>
                   </div>
                 `).join('')}
               </div>
             </div>
             <div id="diagram-viewer">
-              <h3>Preview</h3>
+              <div class="viewer-title" id="viewer-title" style="display:none"></div>
               <div class="card"><div id="diagram-preview-note">Select a diagram to preview</div><img id="diagram-preview-img" style="display:none; max-width:100%; height:auto;" /></div>
               <div id="diagram-parts-container"></div>
             </div>
@@ -311,24 +312,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target && target.getAttribute('data-role') === 'pick-diagram') {
             const diagramId = target.getAttribute('data-diagram-id') || '';
             const large = target.getAttribute('data-large') || '';
-            selectDiagram(diagramId, large);
+            const sectionName = target.getAttribute('data-section-name') || '';
+            selectDiagram(diagramId, large, sectionName);
+            setSelectedCard(diagramId);
         }
         if (target && target.closest && target.closest('[data-role="diagram-card"]')) {
             const card = target.closest('[data-role="diagram-card"]');
             const diagramId = card.getAttribute('data-diagram-id') || '';
             const large = card.getAttribute('data-large') || '';
-            selectDiagram(diagramId, large);
+            const sectionName = card.getAttribute('data-section-name') || '';
+            selectDiagram(diagramId, large, sectionName);
+            setSelectedCard(diagramId);
         }
     });
 
-    function selectDiagram(diagramId, largeUrl) {
+    function selectDiagram(diagramId, largeUrl, sectionName) {
         showDiagramPreview(largeUrl);
+        const title = document.getElementById('viewer-title');
+        if (title) {
+            if (sectionName) {
+                title.textContent = sectionName;
+                title.style.display = 'block';
+            } else {
+                title.style.display = 'none';
+            }
+        }
         const modelNumber = document.getElementById('selectedModelNumber').value;
         const modelId = document.getElementById('selectedModelId').value;
         if (!modelNumber || !modelId || !diagramId) {
             return;
         }
         fetchAndRenderDiagramParts(modelNumber, modelId, diagramId);
+    }
+
+    function setSelectedCard(diagramId) {
+        const cards = document.querySelectorAll('.diagram-card');
+        cards.forEach(c => c.classList.remove('is-selected'));
+        const chosen = Array.from(cards).find(c => (c.getAttribute('data-diagram-id') || '') === String(diagramId));
+        if (chosen) {
+            chosen.classList.add('is-selected');
+            chosen.scrollIntoView({ block: 'nearest' });
+        }
     }
 
     function fetchAndRenderDiagramParts(modelNumber, modelId, diagramId) {
@@ -370,14 +394,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Number.isNaN(bi)) return -1;
             return ai - bi;
         });
+        const uniqueItems = Array.from(new Set(rows.map(r => r.itemNumber).filter(Boolean)));
+        const toolbar = `
+          <div class="quick-toolbar">
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+              <input id="parts-filter" type="text" placeholder="Filter parts (item #, part #, description)" style="flex:1; padding:8px; border:1px solid #e5e7eb; border-radius:6px;" />
+            </div>
+            <div class="chip-row" id="item-chips">
+              ${uniqueItems.slice(0, 50).map(n => `<button class="chip" data-role="chip-item" data-item="${escapeAttr(n)}">${sanitize(n)}</button>`).join('')}
+            </div>
+          </div>`;
+
         const table = `
+          ${toolbar}
           <div class="card">
             <h3>Diagram Parts</h3>
-            <table class="table">
+            <table class="table" id="parts-table">
               <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link</th></tr></thead>
               <tbody>
-                ${rows.map(r => `
-                  <tr>
+                ${rows.map((r, idx) => `
+                  <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
                     <td>${sanitize(r.itemNumber)}</td>
                     <td>${sanitize(r.partNumber)}</td>
                     <td>${sanitize(r.partDescription)}</td>
@@ -393,6 +429,34 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
         container.innerHTML = table;
+
+        // Hook up filter
+        const filterInput = document.getElementById('parts-filter');
+        if (filterInput) {
+            filterInput.addEventListener('input', () => {
+                const q = filterInput.value.toLowerCase();
+                document.querySelectorAll('#parts-table tbody tr').forEach(tr => {
+                    const text = tr.textContent.toLowerCase();
+                    tr.style.display = text.includes(q) ? '' : 'none';
+                });
+            });
+        }
+
+        // Hook up chips
+        const chips = document.querySelectorAll('[data-role="chip-item"]');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('is-active'));
+                chip.classList.add('is-active');
+                const item = chip.getAttribute('data-item') || '';
+                const row = Array.from(document.querySelectorAll('[data-role="part-row"]')).find(r => (r.getAttribute('data-item') || '') === item);
+                if (row) {
+                    row.classList.add('part-row--highlight');
+                    row.scrollIntoView({ block: 'center' });
+                    setTimeout(() => row.classList.remove('part-row--highlight'), 1200);
+                }
+            });
+        });
     }
 
     function showDiagramPreview(url) {
