@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const API_BASE = location.hostname.includes('localhost')
     ? 'http://localhost:3001'
-    : 'https://api.rocparts.com';
+    : 'https://rocparts-api.onrender.com';
     const searchPartsBtn = document.getElementById('searchPartsBtn');
   const searchModelsBtn = document.getElementById('searchModelsBtn');
   const getDiagramsBtn = document.getElementById('getDiagramsBtn');
