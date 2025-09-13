@@ -102,6 +102,47 @@ h1 {
     margin: 12px 0;
 }
 
+#cart-container {
+    position: sticky;
+    top: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.cart-items {
+    display: grid;
+    gap: 8px;
+}
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 8px;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    background: #f9fafb;
+}
+
+.btn-link {
+    border: none;
+    background: none;
+    color: var(--brand);
+    cursor: pointer;
+    padding: 0 6px;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

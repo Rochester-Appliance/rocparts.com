@@ -1,167 +1,177 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE = 'http://localhost:3001';
-    const searchPartsBtn = document.getElementById('searchPartsBtn');
-    const searchModelsBtn = document.getElementById('searchModelsBtn');
-    const getDiagramsBtn = document.getElementById('getDiagramsBtn');
-    const resultsContainer = document.getElementById('results-container');
-    const errorContainer = document.getElementById('error-container');
-    const apiStatusContainer = document.getElementById('api-status-container');
-    const toggleJson = document.getElementById('toggleJson');
-    const tabs = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+  const API_BASE = 'http://localhost:3001';
+  const searchPartsBtn = document.getElementById('searchPartsBtn');
+  const searchModelsBtn = document.getElementById('searchModelsBtn');
+  const getDiagramsBtn = document.getElementById('getDiagramsBtn');
+  const resultsContainer = document.getElementById('results-container');
+  const errorContainer = document.getElementById('error-container');
+  const apiStatusContainer = document.getElementById('api-status-container');
+  const toggleJson = document.getElementById('toggleJson');
+  const cartContainer = document.getElementById('cart-container');
+  const tabs = document.querySelectorAll('.tab-button');
+  const tabContents = document.querySelectorAll('.tab-content');
 
-    tabs.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabs.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            btn.classList.add('active');
-            const tabId = btn.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-            clearContainers();
-        });
+  // Cart state
+  let cart = loadCartFromStorage();
+  renderCart();
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(tc => tc.classList.remove('active'));
+      btn.classList.add('active');
+      const tabId = btn.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
+      clearContainers();
     });
+  });
 
-    searchPartsBtn.addEventListener('click', () => {
-        const mfgCode = document.getElementById('mfgCode').value;
-        const partNumber = document.getElementById('partNumber').value;
+  searchPartsBtn.addEventListener('click', () => {
+    const mfgCode = document.getElementById('mfgCode').value;
+    const partNumber = document.getElementById('partNumber').value;
 
-        clearContainers();
+    clearContainers();
 
-        if (!mfgCode || !partNumber) {
-            errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
-            return;
-        }
-
-        fetch(`${API_BASE}/api/get-parts-info`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mfgCode, partNumber })
-        })
-            .then(response => response.json())
-            .then(data => displayResults(data, 'parts'))
-            .catch(error => {
-                console.error('Error:', error);
-                errorContainer.innerHTML = 'An error occurred while fetching parts info.';
-            });
-    });
-
-    searchModelsBtn.addEventListener('click', () => {
-        const modelNumber = document.getElementById('modelSearch').value;
-
-        clearContainers();
-
-        if (!modelNumber) {
-            errorContainer.innerHTML = 'Please enter a model number (partial ok).';
-            return;
-        }
-
-        fetch(`${API_BASE}/api/model-search`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modelNumber })
-        })
-            .then(response => response.json())
-            .then(data => {
-                displayResults(data, 'models');
-                const first = Array.isArray(data) && data.length ? data[0] : null;
-                if (first) {
-                    document.getElementById('selectedModelNumber').value = first.modelNumber || '';
-                    document.getElementById('selectedModelId').value = first.modelId || '';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                errorContainer.innerHTML = 'An error occurred while searching models.';
-            });
-    });
-
-    getDiagramsBtn.addEventListener('click', () => {
-        const modelNumber = document.getElementById('selectedModelNumber').value;
-        const modelId = document.getElementById('selectedModelId').value;
-
-        clearContainers();
-
-        if (!modelNumber || !modelId) {
-            errorContainer.innerHTML = 'Please provide both Selected Model Number and Model ID.';
-            return;
-        }
-
-        fetch(`${API_BASE}/api/get-diagrams`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modelNumber, modelId })
-        })
-            .then(response => response.json())
-            .then(data => {
-                displayResults(data, 'diagrams');
-                const first = Array.isArray(data) && data.length ? data[0] : null;
-                if (first && first.diagramId) {
-                    selectDiagram(first.diagramId, first.diagramLargeImage, first.sectionName);
-                    setSelectedCard(first.diagramId);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                errorContainer.innerHTML = 'An error occurred while fetching diagrams.';
-            });
-    });
-
-
-    function clearContainers() {
-        resultsContainer.innerHTML = '';
-        errorContainer.innerHTML = '';
-        apiStatusContainer.innerHTML = '';
+    if (!mfgCode || !partNumber) {
+      errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
+      return;
     }
 
-    function displayResults(data, type) {
-        const title = type === 'parts' ? 'Parts Info' :
-            type === 'models' ? 'Model Search Results' :
-                type === 'diagrams' ? 'Diagrams' :
-                    type === 'diagram-parts' ? 'Diagram Parts' : 'API Response';
+    fetch(`${API_BASE}/api/get-parts-info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mfgCode, partNumber })
+    })
+      .then(response => response.json())
+      .then(data => displayResults(data, 'parts'))
+      .catch(error => {
+        console.error('Error:', error);
+        errorContainer.innerHTML = 'An error occurred while fetching parts info.';
+      });
+  });
 
-        // Raw JSON (optional)
-        if (toggleJson && toggleJson.checked) {
-            apiStatusContainer.innerHTML = `<h3>${title} (Raw)</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
-        } else {
-            apiStatusContainer.innerHTML = '';
-        }
+  searchModelsBtn.addEventListener('click', () => {
+    const modelNumber = document.getElementById('modelSearch').value;
 
-        // Structured rendering
-        if (type === 'parts') {
-            renderPartsResult(data);
-            return;
-        }
-        if (type === 'models') {
-            renderModelsResult(Array.isArray(data) ? data : []);
-            return;
-        }
-        if (type === 'diagrams') {
-            renderDiagramsResult(Array.isArray(data) ? data : []);
-            return;
-        }
-        if (type === 'diagram-parts') {
-            renderDiagramPartsResult(data && typeof data === 'object' ? data : {});
-            return;
-        }
+    clearContainers();
 
-        resultsContainer.innerHTML = `<div class="card"><div>Unknown response</div></div>`;
+    if (!modelNumber) {
+      errorContainer.innerHTML = 'Please enter a model number (partial ok).';
+      return;
     }
 
-    function renderPartsResult(data) {
-        const part = data && data.partData ? data.partData : null;
-        const locations = part && Array.isArray(part.availableLocation) ? part.availableLocation : [];
-        const subParts = Array.isArray(data && data.subPartData) ? data.subPartData : [];
+    fetch(`${API_BASE}/api/model-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelNumber })
+    })
+      .then(response => response.json())
+      .then(data => {
+        displayResults(data, 'models');
+        const first = Array.isArray(data) && data.length ? data[0] : null;
+        if (first) {
+          document.getElementById('selectedModelNumber').value = first.modelNumber || '';
+          document.getElementById('selectedModelId').value = first.modelId || '';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        errorContainer.innerHTML = 'An error occurred while searching models.';
+      });
+  });
 
-        const header = `
+  getDiagramsBtn.addEventListener('click', () => {
+    const modelNumber = document.getElementById('selectedModelNumber').value;
+    const modelId = document.getElementById('selectedModelId').value;
+
+    clearContainers();
+
+    if (!modelNumber || !modelId) {
+      errorContainer.innerHTML = 'Please provide both Selected Model Number and Model ID.';
+      return;
+    }
+
+    fetch(`${API_BASE}/api/get-diagrams`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelNumber, modelId })
+    })
+      .then(response => response.json())
+      .then(data => {
+        displayResults(data, 'diagrams');
+        const first = Array.isArray(data) && data.length ? data[0] : null;
+        if (first && first.diagramId) {
+          selectDiagram(first.diagramId, first.diagramLargeImage, first.sectionName);
+          setSelectedCard(first.diagramId);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        errorContainer.innerHTML = 'An error occurred while fetching diagrams.';
+      });
+  });
+
+
+  function clearContainers() {
+    resultsContainer.innerHTML = '';
+    errorContainer.innerHTML = '';
+    apiStatusContainer.innerHTML = '';
+  }
+
+  function displayResults(data, type) {
+    const title = type === 'parts' ? 'Parts Info' :
+      type === 'models' ? 'Model Search Results' :
+        type === 'diagrams' ? 'Diagrams' :
+          type === 'diagram-parts' ? 'Diagram Parts' : 'API Response';
+
+    // Raw JSON (optional)
+    if (toggleJson && toggleJson.checked) {
+      apiStatusContainer.innerHTML = `<h3>${title} (Raw)</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } else {
+      apiStatusContainer.innerHTML = '';
+    }
+
+    // Structured rendering
+    if (type === 'parts') {
+      renderPartsResult(data);
+      return;
+    }
+    if (type === 'models') {
+      renderModelsResult(Array.isArray(data) ? data : []);
+      return;
+    }
+    if (type === 'diagrams') {
+      renderDiagramsResult(Array.isArray(data) ? data : []);
+      return;
+    }
+    if (type === 'diagram-parts') {
+      renderDiagramPartsResult(data && typeof data === 'object' ? data : {});
+      return;
+    }
+
+    resultsContainer.innerHTML = `<div class="card"><div>Unknown response</div></div>`;
+  }
+
+  function renderPartsResult(data) {
+    const part = data && data.partData ? data.partData : null;
+    const locations = part && Array.isArray(part.availableLocation) ? part.availableLocation : [];
+    const subParts = Array.isArray(data && data.subPartData) ? data.subPartData : [];
+    const availableQty = getPartAvailableQty(part, locations);
+    const canAdd = availableQty > 0;
+
+    const header = `
             <div class="card">
                 <h3>Part</h3>
                 <div><strong>${sanitize(part && part.partNumber)}</strong> — ${sanitize(part && part.partDescription)}</div>
                 <div>Price: $${sanitize(part && part.partPrice)} | Retail: $${sanitize(part && part.retailPrice)} | Qty On Hand: ${sanitize(part && part.quantityOnHand)}</div>
                 <div>Flags: Discontinued ${sanitize(part && part.discontinued)}, Hazmat ${sanitize(part && part.hazmat)}, Oversize ${sanitize(part && part.oversize)}</div>
+                <div style="margin-top:8px;">
+                  <button data-role="add-to-cart" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && part.partPrice)}" ${canAdd ? '' : 'disabled'}>Add to Cart</button>
+                </div>
             </div>
         `;
 
-        const locationsTable = locations.length ? `
+    const locationsTable = locations.length ? `
             <div class="card">
                 <h3>Available Locations</h3>
                 <table class="table">
@@ -179,11 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         ` : '';
 
-        const subPartsTable = subParts.length ? `
+    const subPartsTable = subParts.length ? `
             <div class="card">
                 <h3>Sub Parts</h3>
                 <table class="table">
-                  <thead><tr><th>Part #</th><th>Desc</th><th>Price</th><th>Retail</th><th>QOH</th></tr></thead>
+                  <thead><tr><th>Part #</th><th>Desc</th><th>Price</th><th>Retail</th><th>QOH</th><th>Cart</th></tr></thead>
                   <tbody>
                     ${subParts.map(sp => `
                       <tr>
@@ -192,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${sanitize(sp.partPrice)}</td>
                         <td>${sanitize(sp.retailPrice)}</td>
                         <td>${sanitize(sp.quantityOnHand)}</td>
+                        <td><button data-role="add-to-cart" data-part-number="${escapeAttr(sp.partNumber)}" data-part-description="${escapeAttr(sp.partDescription)}" data-price="${escapeAttr(sp.partPrice)}" ${(parseInt(sp.quantityOnHand || '0', 10) > 0) ? '' : 'disabled'}>Add</button></td>
                       </tr>
                     `).join('')}
                   </tbody>
@@ -199,15 +210,15 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         ` : '';
 
-        resultsContainer.innerHTML = `${header}${locationsTable}${subPartsTable}`;
-    }
+    resultsContainer.innerHTML = `${header}${locationsTable}${subPartsTable}`;
+  }
 
-    function renderModelsResult(models) {
-        if (!models.length) {
-            resultsContainer.innerHTML = `<div class="card">No models found.</div>`;
-            return;
-        }
-        const table = `
+  function renderModelsResult(models) {
+    if (!models.length) {
+      resultsContainer.innerHTML = `<div class="card">No models found.</div>`;
+      return;
+    }
+    const table = `
             <div class="card">
               <h3>Models</h3>
               <table class="table">
@@ -226,11 +237,11 @@ document.addEventListener('DOMContentLoaded', () => {
               </table>
             </div>
         `;
-        resultsContainer.innerHTML = table;
-    }
+    resultsContainer.innerHTML = table;
+  }
 
-    function renderDiagramsResult(diagrams) {
-        const grid = `
+  function renderDiagramsResult(diagrams) {
+    const grid = `
           <div class="split">
             <div>
               <h3>Diagrams</h3>
@@ -252,34 +263,34 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
         `;
-        resultsContainer.innerHTML = grid;
-    }
+    resultsContainer.innerHTML = grid;
+  }
 
-    function renderDiagramPartsResult(partsObj) {
-        const rows = Object.values(partsObj || {}).map(p => ({
-            itemNumber: p.itemNumber || '',
-            partNumber: p.partNumber || '',
-            partDescription: p.partDescription || '',
-            price: p.price || '',
-            listPrice: p.listPrice || '',
-            qtyTotal: p.qtyTotal || '',
-            stock101: p.stock && (p.stock['101'] || p.stock[101]) || '',
-            url: p.url || ''
-        }));
-        rows.sort((a, b) => {
-            const ai = parseInt((a.itemNumber || '').replace(/\D/g, ''), 10);
-            const bi = parseInt((b.itemNumber || '').replace(/\D/g, ''), 10);
-            if (Number.isNaN(ai) && Number.isNaN(bi)) return 0;
-            if (Number.isNaN(ai)) return 1;
-            if (Number.isNaN(bi)) return -1;
-            return ai - bi;
-        });
+  function renderDiagramPartsResult(partsObj) {
+    const rows = Object.values(partsObj || {}).map(p => ({
+      itemNumber: p.itemNumber || '',
+      partNumber: p.partNumber || '',
+      partDescription: p.partDescription || '',
+      price: p.price || '',
+      listPrice: p.listPrice || '',
+      qtyTotal: p.qtyTotal || '',
+      stock101: p.stock && (p.stock['101'] || p.stock[101]) || '',
+      url: p.url || ''
+    }));
+    rows.sort((a, b) => {
+      const ai = parseInt((a.itemNumber || '').replace(/\D/g, ''), 10);
+      const bi = parseInt((b.itemNumber || '').replace(/\D/g, ''), 10);
+      if (Number.isNaN(ai) && Number.isNaN(bi)) return 0;
+      if (Number.isNaN(ai)) return 1;
+      if (Number.isNaN(bi)) return -1;
+      return ai - bi;
+    });
 
-        const table = `
+    const table = `
           <div class="card">
             <h3>Diagram Parts</h3>
             <table class="table">
-              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link</th></tr></thead>
+              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link</th><th>Cart</th></tr></thead>
               <tbody>
                 ${rows.map(r => `
                   <tr>
@@ -291,111 +302,140 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${sanitize(r.qtyTotal)}</td>
                     <td>${sanitize(r.stock101)}</td>
                     <td>${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}</td>
+                    <td><button data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.price)}" ${(isRowAvailable(r) ? '' : 'disabled')}>Add</button></td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
           </div>
         `;
-        resultsContainer.innerHTML = table;
-    }
+    resultsContainer.innerHTML = table;
+  }
 
-    // Click handlers for dynamic content
-    resultsContainer.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target && target.getAttribute('data-role') === 'pick-model') {
-            const modelNumber = target.getAttribute('data-model-number') || '';
-            const modelId = target.getAttribute('data-model-id') || '';
-            document.getElementById('selectedModelNumber').value = modelNumber;
-            document.getElementById('selectedModelId').value = modelId;
-        }
-        if (target && target.getAttribute('data-role') === 'pick-diagram') {
-            const diagramId = target.getAttribute('data-diagram-id') || '';
-            const large = target.getAttribute('data-large') || '';
-            const sectionName = target.getAttribute('data-section-name') || '';
-            selectDiagram(diagramId, large, sectionName);
-            setSelectedCard(diagramId);
-        }
-        if (target && target.closest && target.closest('[data-role="diagram-card"]')) {
-            const card = target.closest('[data-role="diagram-card"]');
-            const diagramId = card.getAttribute('data-diagram-id') || '';
-            const large = card.getAttribute('data-large') || '';
-            const sectionName = card.getAttribute('data-section-name') || '';
-            selectDiagram(diagramId, large, sectionName);
-            setSelectedCard(diagramId);
-        }
+  // Click handlers for dynamic content
+  resultsContainer.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target && target.getAttribute('data-role') === 'pick-model') {
+      const modelNumber = target.getAttribute('data-model-number') || '';
+      const modelId = target.getAttribute('data-model-id') || '';
+      document.getElementById('selectedModelNumber').value = modelNumber;
+      document.getElementById('selectedModelId').value = modelId;
+    }
+    if (target && target.getAttribute('data-role') === 'pick-diagram') {
+      const diagramId = target.getAttribute('data-diagram-id') || '';
+      const large = target.getAttribute('data-large') || '';
+      const sectionName = target.getAttribute('data-section-name') || '';
+      selectDiagram(diagramId, large, sectionName);
+      setSelectedCard(diagramId);
+    }
+    if (target && target.closest && target.closest('[data-role="diagram-card"]')) {
+      const card = target.closest('[data-role="diagram-card"]');
+      const diagramId = card.getAttribute('data-diagram-id') || '';
+      const large = card.getAttribute('data-large') || '';
+      const sectionName = card.getAttribute('data-section-name') || '';
+      selectDiagram(diagramId, large, sectionName);
+      setSelectedCard(diagramId);
+    }
+    if (target && target.getAttribute && target.getAttribute('data-role') === 'add-to-cart') {
+      const partNumber = target.getAttribute('data-part-number') || '';
+      const partDescription = target.getAttribute('data-part-description') || '';
+      const priceStr = target.getAttribute('data-price') || '0';
+      const price = parseFloat(priceStr) || 0;
+      addToCart({ partNumber, partDescription, price, qty: 1 });
+    }
+  });
+
+  // Cart interactions
+  cartContainer.addEventListener('click', (e) => {
+    const target = e.target;
+    if (!target) return;
+    if (target.getAttribute('data-role') === 'cart-inc') {
+      const idx = parseInt(target.getAttribute('data-index') || '-1', 10);
+      updateCartQty(idx, +1);
+    }
+    if (target.getAttribute('data-role') === 'cart-dec') {
+      const idx = parseInt(target.getAttribute('data-index') || '-1', 10);
+      updateCartQty(idx, -1);
+    }
+    if (target.getAttribute('data-role') === 'cart-remove') {
+      const idx = parseInt(target.getAttribute('data-index') || '-1', 10);
+      removeFromCart(idx);
+    }
+    if (target.getAttribute('data-role') === 'cart-clear') {
+      clearCart();
+    }
+  });
+
+  function selectDiagram(diagramId, largeUrl, sectionName) {
+    showDiagramPreview(largeUrl);
+    const title = document.getElementById('viewer-title');
+    if (title) {
+      if (sectionName) {
+        title.textContent = sectionName;
+        title.style.display = 'block';
+      } else {
+        title.style.display = 'none';
+      }
+    }
+    const modelNumber = document.getElementById('selectedModelNumber').value;
+    const modelId = document.getElementById('selectedModelId').value;
+    if (!modelNumber || !modelId || !diagramId) {
+      return;
+    }
+    fetchAndRenderDiagramParts(modelNumber, modelId, diagramId);
+  }
+
+  function setSelectedCard(diagramId) {
+    const cards = document.querySelectorAll('.diagram-card');
+    cards.forEach(c => c.classList.remove('is-selected'));
+    const chosen = Array.from(cards).find(c => (c.getAttribute('data-diagram-id') || '') === String(diagramId));
+    if (chosen) {
+      chosen.classList.add('is-selected');
+      chosen.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function fetchAndRenderDiagramParts(modelNumber, modelId, diagramId) {
+    const partsContainer = document.getElementById('diagram-parts-container');
+    if (partsContainer) {
+      partsContainer.innerHTML = '<div class="card">Loading parts…</div>';
+    }
+    fetch(`${API_BASE}/api/get-diagram-parts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelNumber, modelId, diagramId })
+    })
+      .then(response => response.json())
+      .then(data => renderDiagramPartsInViewer(data && typeof data === 'object' ? data : {}))
+      .catch(error => {
+        console.error('Error:', error);
+        if (partsContainer) partsContainer.innerHTML = '<div class="card">Failed to load parts.</div>';
+      });
+  }
+
+  function renderDiagramPartsInViewer(partsObj) {
+    const container = document.getElementById('diagram-parts-container');
+    if (!container) return;
+    const rows = Object.values(partsObj || {}).map(p => ({
+      itemNumber: p.itemNumber || '',
+      partNumber: p.partNumber || '',
+      partDescription: p.partDescription || '',
+      price: p.price || '',
+      listPrice: p.listPrice || '',
+      qtyTotal: p.qtyTotal || '',
+      stock101: p.stock && (p.stock['101'] || p.stock[101]) || '',
+      url: p.url || ''
+    }));
+    rows.sort((a, b) => {
+      const ai = parseInt((a.itemNumber || '').replace(/\D/g, ''), 10);
+      const bi = parseInt((b.itemNumber || '').replace(/\D/g, ''), 10);
+      if (Number.isNaN(ai) && Number.isNaN(bi)) return 0;
+      if (Number.isNaN(ai)) return 1;
+      if (Number.isNaN(bi)) return -1;
+      return ai - bi;
     });
-
-    function selectDiagram(diagramId, largeUrl, sectionName) {
-        showDiagramPreview(largeUrl);
-        const title = document.getElementById('viewer-title');
-        if (title) {
-            if (sectionName) {
-                title.textContent = sectionName;
-                title.style.display = 'block';
-            } else {
-                title.style.display = 'none';
-            }
-        }
-        const modelNumber = document.getElementById('selectedModelNumber').value;
-        const modelId = document.getElementById('selectedModelId').value;
-        if (!modelNumber || !modelId || !diagramId) {
-            return;
-        }
-        fetchAndRenderDiagramParts(modelNumber, modelId, diagramId);
-    }
-
-    function setSelectedCard(diagramId) {
-        const cards = document.querySelectorAll('.diagram-card');
-        cards.forEach(c => c.classList.remove('is-selected'));
-        const chosen = Array.from(cards).find(c => (c.getAttribute('data-diagram-id') || '') === String(diagramId));
-        if (chosen) {
-            chosen.classList.add('is-selected');
-            chosen.scrollIntoView({ block: 'nearest' });
-        }
-    }
-
-    function fetchAndRenderDiagramParts(modelNumber, modelId, diagramId) {
-        const partsContainer = document.getElementById('diagram-parts-container');
-        if (partsContainer) {
-            partsContainer.innerHTML = '<div class="card">Loading parts…</div>';
-        }
-        fetch(`${API_BASE}/api/get-diagram-parts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modelNumber, modelId, diagramId })
-        })
-            .then(response => response.json())
-            .then(data => renderDiagramPartsInViewer(data && typeof data === 'object' ? data : {}))
-            .catch(error => {
-                console.error('Error:', error);
-                if (partsContainer) partsContainer.innerHTML = '<div class="card">Failed to load parts.</div>';
-            });
-    }
-
-    function renderDiagramPartsInViewer(partsObj) {
-        const container = document.getElementById('diagram-parts-container');
-        if (!container) return;
-        const rows = Object.values(partsObj || {}).map(p => ({
-            itemNumber: p.itemNumber || '',
-            partNumber: p.partNumber || '',
-            partDescription: p.partDescription || '',
-            price: p.price || '',
-            listPrice: p.listPrice || '',
-            qtyTotal: p.qtyTotal || '',
-            stock101: p.stock && (p.stock['101'] || p.stock[101]) || '',
-            url: p.url || ''
-        }));
-        rows.sort((a, b) => {
-            const ai = parseInt((a.itemNumber || '').replace(/\D/g, ''), 10);
-            const bi = parseInt((b.itemNumber || '').replace(/\D/g, ''), 10);
-            if (Number.isNaN(ai) && Number.isNaN(bi)) return 0;
-            if (Number.isNaN(ai)) return 1;
-            if (Number.isNaN(bi)) return -1;
-            return ai - bi;
-        });
-        const uniqueItems = Array.from(new Set(rows.map(r => r.itemNumber).filter(Boolean)));
-        const toolbar = `
+    const uniqueItems = Array.from(new Set(rows.map(r => r.itemNumber).filter(Boolean)));
+    const toolbar = `
           <div class="quick-toolbar">
             <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
               <input id="parts-filter" type="text" placeholder="Filter parts (item #, part #, description)" style="flex:1; padding:8px; border:1px solid #e5e7eb; border-radius:6px;" />
@@ -405,12 +445,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>`;
 
-        const table = `
+    const table = `
           ${toolbar}
           <div class="card">
             <h3>Diagram Parts</h3>
             <table class="table" id="parts-table">
-              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link</th></tr></thead>
+              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link / Cart</th></tr></thead>
               <tbody>
                 ${rows.map((r, idx) => `
                   <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
@@ -421,71 +461,203 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${sanitize(r.listPrice)}</td>
                     <td>${sanitize(r.qtyTotal)}</td>
                     <td>${sanitize(r.stock101)}</td>
-                    <td>${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}</td>
+                    <td>
+                      ${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}
+                      <button style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.price)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
+                    </td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
           </div>
         `;
-        container.innerHTML = table;
+    container.innerHTML = table;
 
-        // Hook up filter
-        const filterInput = document.getElementById('parts-filter');
-        if (filterInput) {
-            filterInput.addEventListener('input', () => {
-                const q = filterInput.value.toLowerCase();
-                document.querySelectorAll('#parts-table tbody tr').forEach(tr => {
-                    const text = tr.textContent.toLowerCase();
-                    tr.style.display = text.includes(q) ? '' : 'none';
-                });
-            });
-        }
-
-        // Hook up chips
-        const chips = document.querySelectorAll('[data-role="chip-item"]');
-        chips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                chips.forEach(c => c.classList.remove('is-active'));
-                chip.classList.add('is-active');
-                const item = chip.getAttribute('data-item') || '';
-                const row = Array.from(document.querySelectorAll('[data-role="part-row"]')).find(r => (r.getAttribute('data-item') || '') === item);
-                if (row) {
-                    row.classList.add('part-row--highlight');
-                    row.scrollIntoView({ block: 'center' });
-                    setTimeout(() => row.classList.remove('part-row--highlight'), 1200);
-                }
-            });
+    // Hook up filter
+    const filterInput = document.getElementById('parts-filter');
+    if (filterInput) {
+      filterInput.addEventListener('input', () => {
+        const q = filterInput.value.toLowerCase();
+        document.querySelectorAll('#parts-table tbody tr').forEach(tr => {
+          const text = tr.textContent.toLowerCase();
+          tr.style.display = text.includes(q) ? '' : 'none';
         });
+      });
     }
 
-    function showDiagramPreview(url) {
-        const img = document.getElementById('diagram-preview-img');
-        const note = document.getElementById('diagram-preview-note');
-        if (!img || !note) return;
-        if (url) {
-            img.src = url;
-            img.style.display = 'block';
-            note.style.display = 'none';
-        } else {
-            img.style.display = 'none';
-            note.style.display = 'block';
+    // Hook up chips
+    const chips = document.querySelectorAll('[data-role="chip-item"]');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+        const item = chip.getAttribute('data-item') || '';
+        const row = Array.from(document.querySelectorAll('[data-role="part-row"]')).find(r => (r.getAttribute('data-item') || '') === item);
+        if (row) {
+          row.classList.add('part-row--highlight');
+          row.scrollIntoView({ block: 'center' });
+          setTimeout(() => row.classList.remove('part-row--highlight'), 1200);
         }
-    }
+      });
+    });
+  }
 
-    function sanitize(value) {
-        if (value === null || value === undefined) return '';
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+  function showDiagramPreview(url) {
+    const img = document.getElementById('diagram-preview-img');
+    const note = document.getElementById('diagram-preview-note');
+    if (!img || !note) return;
+    if (url) {
+      img.src = url;
+      img.style.display = 'block';
+      note.style.display = 'none';
+    } else {
+      img.style.display = 'none';
+      note.style.display = 'block';
     }
+  }
 
-    function escapeAttr(value) {
-        if (value === null || value === undefined) return '';
-        return String(value)
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+  function sanitize(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function escapeAttr(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function isRowAvailable(row) {
+    const qty = parseInt(row.qtyTotal || '0', 10);
+    const stock = parseInt(row.stock101 || '0', 10);
+    return (qty > 0) || (stock > 0);
+  }
+
+  function getPartAvailableQty(part, locations) {
+    if (!part) return 0;
+    const qoh = parseInt(part.quantityOnHand || '0', 10);
+    if (!Number.isNaN(qoh) && qoh > 0) return qoh;
+    if (Array.isArray(locations) && locations.length) {
+      return locations.reduce((sum, loc) => sum + (parseInt(loc.availableQuantity || '0', 10) || 0), 0);
     }
+    return 0;
+  }
+
+  function loadCartFromStorage() {
+    try {
+      const raw = localStorage.getItem('vandv_cart');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCartToStorage() {
+    try {
+      localStorage.setItem('vandv_cart', JSON.stringify(cart));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function addToCart(item) {
+    const idx = cart.findIndex(i => i.partNumber === item.partNumber);
+    if (idx >= 0) {
+      cart[idx].qty += item.qty || 1;
+    } else {
+      cart.push({ partNumber: item.partNumber, partDescription: item.partDescription, price: item.price || 0, qty: item.qty || 1 });
+    }
+    saveCartToStorage();
+    renderCart();
+  }
+
+  function updateCartQty(index, delta) {
+    if (index < 0 || index >= cart.length) return;
+    cart[index].qty = Math.max(1, (cart[index].qty || 1) + delta);
+    saveCartToStorage();
+    renderCart();
+  }
+
+  function removeFromCart(index) {
+    if (index < 0 || index >= cart.length) return;
+    cart.splice(index, 1);
+    saveCartToStorage();
+    renderCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    saveCartToStorage();
+    renderCart();
+  }
+
+  function renderCart() {
+    if (!cartContainer) return;
+    if (!cart.length) {
+      cartContainer.innerHTML = `<div class="cart-header"><strong>Cart</strong><span>0 items</span></div><div class="muted">Your cart is empty.</div>`;
+      return;
+    }
+    const subtotal = cart.reduce((sum, i) => sum + (i.price || 0) * (i.qty || 1), 0);
+    const itemsHtml = cart.map((i, idx) => `
+      <div class="cart-item">
+        <div><strong>${sanitize(i.partNumber)}</strong><div style="color:var(--muted); font-size:12px;">${sanitize(i.partDescription || '')}</div></div>
+        <div>$${(Number(i.price || 0)).toFixed(2)}</div>
+        <div>
+          <button class="btn-link" data-role="cart-dec" data-index="${idx}">−</button>
+          <span>${sanitize(i.qty)}</span>
+          <button class="btn-link" data-role="cart-inc" data-index="${idx}">+</button>
+        </div>
+        <div><button class="btn-link" data-role="cart-remove" data-index="${idx}">Remove</button></div>
+      </div>
+    `).join('');
+    cartContainer.innerHTML = `
+      <div class="cart-header">
+        <strong>Cart</strong>
+        <div>
+          <span style="margin-right:10px;">Items: ${cart.length}</span>
+          <span><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</span>
+        </div>
+      </div>
+      <div class="cart-items">${itemsHtml}</div>
+      <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
+        <button data-role="cart-clear">Clear Cart</button>
+        <button id="checkoutBtn">Checkout</button>
+      </div>
+    `;
+
+    const btn = document.getElementById('checkoutBtn');
+    if (btn) {
+      btn.addEventListener('click', onCheckoutClick, { once: true });
+    }
+  }
+
+  async function onCheckoutClick() {
+    try {
+      if (!window.Stripe) {
+        alert('Stripe.js not loaded');
+        return;
+      }
+      const cfgRes = await fetch(`${API_BASE}/api/stripe-config`);
+      const cfg = await cfgRes.json();
+      if (!cfg.publishableKey) throw new Error('Missing publishable key');
+      const stripe = window.Stripe(cfg.publishableKey);
+      const payload = { items: cart.map(i => ({ partNumber: i.partNumber, partDescription: i.partDescription, price: i.price, qty: i.qty })) };
+      const res = await fetch(`${API_BASE}/api/checkout/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data && data.details ? data.details : 'Failed to create session');
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.id });
+      if (error) alert(error.message);
+    } catch (e) {
+      console.error(e);
+      alert('Checkout failed: ' + (e && e.message ? e.message : 'Unknown error'));
+    }
+  }
 });
