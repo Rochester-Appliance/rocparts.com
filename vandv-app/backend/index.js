@@ -18,6 +18,7 @@ const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
 const CURRENCY = (process.env.CURRENCY || 'usd').toLowerCase();
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
+const FRONTEND_URL = process.env.FRONTEND_URL || '';
 
 app.get('/api/stripe-config', (req, res) => {
   if (!STRIPE_PUBLISHABLE_KEY) {
@@ -135,14 +136,21 @@ app.get('/stripe/success/:sid', async (req, res) => {
         <tfoot><tr><td></td><td style="text-align:right; font-weight:600;">Total</td><td style="text-align:right; font-weight:600;">$${total.toFixed(2)} ${currency}</td></tr></tfoot>
       </table>
       <p style="margin-top:16px;">${receiptUrl ? `<a href="${receiptUrl}" target="_blank">View/download Stripe receipt</a>` : ''}</p>
-      <p><a href="${PUBLIC_BASE_URL}/">Return to app</a></p>
+      <p><a href="${FRONTEND_URL || PUBLIC_BASE_URL}">Return to app</a></p>
     </body></html>`);
   } catch (err) {
     res.send('Payment successful. (Receipt unavailable)');
   }
 });
 app.get('/stripe/cancel', (req, res) => {
+  if (FRONTEND_URL) return res.redirect(FRONTEND_URL);
   res.send('Payment canceled. You can return to the app and try again.');
+});
+
+// Root: redirect to frontend if configured to avoid "Cannot GET /"
+app.get('/', (req, res) => {
+  if (FRONTEND_URL) return res.redirect(FRONTEND_URL);
+  res.send('rocparts API is running');
 });
 
 // Webhook endpoint (skeleton). IMPORTANT: raw body for signature verification
