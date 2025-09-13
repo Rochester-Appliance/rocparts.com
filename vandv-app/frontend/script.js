@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = 'http://localhost:3001';
-  const searchPartsBtn = document.getElementById('searchPartsBtn');
+  const API_BASE = location.hostname.includes('localhost')
+    ? 'http://localhost:3001'
+    : 'https://api.rocparts.com';
+    const searchPartsBtn = document.getElementById('searchPartsBtn');
   const searchModelsBtn = document.getElementById('searchModelsBtn');
   const getDiagramsBtn = document.getElementById('getDiagramsBtn');
-  const resultsContainer = document.getElementById('results-container');
-  const errorContainer = document.getElementById('error-container');
-  const apiStatusContainer = document.getElementById('api-status-container');
+    const resultsContainer = document.getElementById('results-container');
+    const errorContainer = document.getElementById('error-container');
+    const apiStatusContainer = document.getElementById('api-status-container');
   const toggleJson = document.getElementById('toggleJson');
   const cartContainer = document.getElementById('cart-container');
   const tabs = document.querySelectorAll('.tab-button');
@@ -26,46 +28,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  searchPartsBtn.addEventListener('click', () => {
-    const mfgCode = document.getElementById('mfgCode').value;
-    const partNumber = document.getElementById('partNumber').value;
+    searchPartsBtn.addEventListener('click', () => {
+        const mfgCode = document.getElementById('mfgCode').value;
+        const partNumber = document.getElementById('partNumber').value;
 
-    clearContainers();
+        clearContainers();
 
-    if (!mfgCode || !partNumber) {
-      errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
-      return;
-    }
+        if (!mfgCode || !partNumber) {
+            errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
+            return;
+        }
 
     fetch(`${API_BASE}/api/get-parts-info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mfgCode, partNumber })
-    })
-      .then(response => response.json())
-      .then(data => displayResults(data, 'parts'))
-      .catch(error => {
-        console.error('Error:', error);
-        errorContainer.innerHTML = 'An error occurred while fetching parts info.';
-      });
-  });
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mfgCode, partNumber })
+        })
+            .then(response => response.json())
+            .then(data => displayResults(data, 'parts'))
+            .catch(error => {
+                console.error('Error:', error);
+                errorContainer.innerHTML = 'An error occurred while fetching parts info.';
+            });
+    });
 
   searchModelsBtn.addEventListener('click', () => {
     const modelNumber = document.getElementById('modelSearch').value;
 
-    clearContainers();
+        clearContainers();
 
-    if (!modelNumber) {
+        if (!modelNumber) {
       errorContainer.innerHTML = 'Please enter a model number (partial ok).';
-      return;
-    }
+            return;
+        }
 
     fetch(`${API_BASE}/api/model-search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelNumber })
-    })
-      .then(response => response.json())
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modelNumber })
+        })
+            .then(response => response.json())
       .then(data => {
         displayResults(data, 'models');
         const first = Array.isArray(data) && data.length ? data[0] : null;
@@ -105,20 +107,20 @@ document.addEventListener('DOMContentLoaded', () => {
           setSelectedCard(first.diagramId);
         }
       })
-      .catch(error => {
-        console.error('Error:', error);
-        errorContainer.innerHTML = 'An error occurred while fetching diagrams.';
-      });
-  });
+            .catch(error => {
+                console.error('Error:', error);
+                errorContainer.innerHTML = 'An error occurred while fetching diagrams.';
+            });
+    });
 
 
-  function clearContainers() {
-    resultsContainer.innerHTML = '';
-    errorContainer.innerHTML = '';
-    apiStatusContainer.innerHTML = '';
-  }
+    function clearContainers() {
+        resultsContainer.innerHTML = '';
+        errorContainer.innerHTML = '';
+        apiStatusContainer.innerHTML = '';
+    }
 
-  function displayResults(data, type) {
+    function displayResults(data, type) {
     const title = type === 'parts' ? 'Parts Info' :
       type === 'models' ? 'Model Search Results' :
         type === 'diagrams' ? 'Diagrams' :
@@ -659,5 +661,5 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(e);
       alert('Checkout failed: ' + (e && e.message ? e.message : 'Unknown error'));
     }
-  }
+    }
 });

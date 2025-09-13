@@ -14,6 +14,7 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
 const CURRENCY = (process.env.CURRENCY || 'usd').toLowerCase();
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
 
 app.get('/api/stripe-config', (req, res) => {
   if (!STRIPE_PUBLISHABLE_KEY) {
@@ -53,8 +54,8 @@ app.post('/api/checkout/session', async (req, res) => {
       };
     });
 
-    const successUrl = `http://localhost:${port}/stripe/success/{CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `http://localhost:${port}/stripe/cancel`;
+    const successUrl = `${PUBLIC_BASE_URL}/stripe/success/{CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${PUBLIC_BASE_URL}/stripe/cancel`;
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -131,7 +132,7 @@ app.get('/stripe/success/:sid', async (req, res) => {
         <tfoot><tr><td></td><td style="text-align:right; font-weight:600;">Total</td><td style="text-align:right; font-weight:600;">$${total.toFixed(2)} ${currency}</td></tr></tfoot>
       </table>
       <p style="margin-top:16px;">${receiptUrl ? `<a href="${receiptUrl}" target="_blank">View/download Stripe receipt</a>` : ''}</p>
-      <p><a href="http://localhost:${port}/">Return to app</a></p>
+      <p><a href="${PUBLIC_BASE_URL}/">Return to app</a></p>
     </body></html>`);
   } catch (err) {
     res.send('Payment successful. (Receipt unavailable)');
