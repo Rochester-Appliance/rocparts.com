@@ -7,6 +7,9 @@ const app = express();
 const port = 3001;
 
 app.use(cors());
+// IMPORTANT: Stripe webhook needs the raw body. Mount raw parser BEFORE json,
+// and only for the webhook route so other routes still receive parsed JSON.
+app.use('/api/stripe/webhook', express.raw({ type: '*/*' }));
 app.use(express.json());
 
 // Stripe setup
@@ -143,7 +146,7 @@ app.get('/stripe/cancel', (req, res) => {
 });
 
 // Webhook endpoint (skeleton). IMPORTANT: raw body for signature verification
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+app.post('/api/stripe/webhook', (req, res) => {
   try {
     if (!stripe) {
       return res.status(500).send('Stripe not configured');
