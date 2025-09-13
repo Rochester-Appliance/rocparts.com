@@ -1,3 +1,22 @@
+# Keep repo minimal: only vandv-app/, README.md and this .gitignore
+/*
+!/.gitignore
+!/README.md
+!/vandv-app/
+!/vandv-app/**
+
+# Re-ignore common build artifacts and secrets inside vandv-app
+/vandv-app/**/node_modules/
+/vandv-app/**/dist/
+/vandv-app/**/build/
+/vandv-app/**/.env
+/vandv-app/**/.env.*
+
+# OS/IDE cruft
+.DS_Store
+*.log
+*.log.*
+/tmp/
 # Node
 node_modules/
 npm-debug.log*
