@@ -61,16 +61,14 @@ h1 {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
-    gap: 10px;
-    flex-wrap: wrap;
 }
 
 .search-container input {
-    width: 240px;
-    max-width: 100%;
-    padding: 10px 12px;
+    width: 200px;
+    padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    margin-right: 10px;
 }
 
 .search-container button {
@@ -192,7 +190,7 @@ h1 {
 
 .split {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 320px 1fr;
     gap: 16px;
 }
 
@@ -278,32 +276,6 @@ h1 {
 }
 
 @media (max-width: 700px) {
-    body {
-        padding: 10px;
-    }
-
-    .container {
-        padding: 14px;
-        border-radius: 6px;
-    }
-
-    .tabs {
-        flex-wrap: wrap;
-    }
-
-    .tab-button {
-        flex: 1;
-        min-width: 120px;
-    }
-
-    .search-container {
-        justify-content: stretch;
-    }
-
-    .search-container input {
-        flex: 1 1 260px;
-    }
-
     .split {
         grid-template-columns: 1fr;
     }
@@ -312,26 +284,4 @@ h1 {
         max-height: none;
         overflow: visible;
     }
-
-    .viewer-title {
-        position: static;
-    }
-
-    .grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    }
-
-    .diagram-card img {
-        height: auto;
-    }
-}
-
-/* Responsive table wrapper */
-.table-wrap {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.table {
-    min-width: 640px;
 }
