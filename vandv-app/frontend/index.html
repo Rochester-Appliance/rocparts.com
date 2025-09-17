@@ -9,6 +9,19 @@
 </head>
 
 <body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <div class="brand">
+                <span class="brand__logo">🧩</span>
+                <span class="brand__name">RocParts</span>
+            </div>
+            <nav class="site-nav">
+                <a href="#parts" class="nav-link">Parts</a>
+                <a href="#diagrams" class="nav-link">Diagrams</a>
+                <a href="#cart" class="nav-link">Cart</a>
+            </nav>
+        </div>
+    </header>
     <div class="container">
         <h1>V&V Parts & Diagrams</h1>
         <div class="tabs">
@@ -42,6 +55,23 @@
         <div id="api-status-container"></div>
         <div id="results-container"></div>
         <div id="error-container"></div>
+    </div>
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <div>© <span id="year"></span> RocParts</div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+    <div id="mobile-checkout-bar" class="mobile-checkout-bar" style="display:none;">
+        <div class="mobile-checkout-bar__content">
+            <div class="mobile-checkout-bar__total"><span>Subtotal</span><strong id="mobile-subtotal">$0.00</strong>
+            </div>
+            <button id="mobileCheckoutBtn" class="mobile-checkout-bar__btn">Checkout</button>
+        </div>
     </div>
     <script src="https://js.stripe.com/v3/"></script>
     <script src="script.js"></script>
