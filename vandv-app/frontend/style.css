@@ -55,7 +55,9 @@ body {
 
 h1 {
     text-align: center;
-    color: #333;
+    color: #111827;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 .search-container {
@@ -65,21 +67,23 @@ h1 {
 }
 
 .search-container input {
-    width: 200px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    width: 260px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     margin-right: 10px;
+    background: #fff;
 }
 
-.search-container button {
-    padding: 10px 20px;
-    border: none;
+.search-container button,
+button {
+    padding: 10px 14px;
+    border: 1px solid var(--brand);
     background-color: var(--brand);
     color: white;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: transform .05s ease, background-color .2s ease;
+    transition: transform .05s ease, background-color .2s ease, box-shadow .2s ease;
 }
 
 .search-container button:hover {
@@ -172,6 +176,34 @@ h1 {
     padding: 0 6px;
 }
 
+/* Compact table action styles */
+.btn-small {
+    padding: 6px 10px;
+    border: 1px solid var(--brand);
+    background: var(--brand);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.btn-small:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.link {
+    color: var(--brand);
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -180,8 +212,8 @@ h1 {
 
 .card {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px;
+    border-radius: 10px;
+    padding: 14px;
     background: var(--card);
     transition: box-shadow .2s ease, border-color .2s ease;
 }
@@ -205,8 +237,9 @@ h1 {
 .table th,
 .table td {
     border: 1px solid var(--border);
-    padding: 6px 8px;
+    padding: 10px 12px;
     text-align: left;
+    color: #111;
 }
 
 .table tbody tr:nth-child(odd) {
@@ -219,7 +252,7 @@ h1 {
 
 .split {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 360px 1fr;
     gap: 16px;
 }
 
@@ -309,19 +342,21 @@ h1 {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, .3);
+    z-index: 999;
 }
 
 .drawer {
     position: fixed;
     top: 0;
     right: 0;
-    width: min(520px, 95vw);
+    width: min(560px, 95vw);
     height: 100vh;
     background: var(--surface);
     border-left: 1px solid var(--border);
     box-shadow: -8px 0 24px rgba(0, 0, 0, .1);
-    padding: 16px;
+    padding: 20px;
     overflow: auto;
+    z-index: 1000;
 }
 
 .drawer h3 {

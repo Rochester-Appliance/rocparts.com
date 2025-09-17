@@ -1,8 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = location.hostname.includes('localhost')
-    ? 'http://localhost:3001'
-    : 'https://rocparts-api.onrender.com';
-  const useNewUi = new URLSearchParams(location.search).has('new');
+  const params = new URLSearchParams(location.search);
+  const apiOverride = params.get('api');
+  const isLocalContext = location.hostname.includes('localhost') || location.hostname === '127.0.0.1' || location.protocol === 'file:';
+  const API_BASE = apiOverride || (isLocalContext ? 'http://localhost:3001' : 'https://rocparts-api.onrender.com');
+  const useLegacyUi = params.has('legacy');
+  const useNewUi = !useLegacyUi;
+  const debugMode = params.has('debug');
   const searchPartsBtn = document.getElementById('searchPartsBtn');
   const searchModelsBtn = document.getElementById('searchModelsBtn');
   const getDiagramsBtn = document.getElementById('getDiagramsBtn');
@@ -32,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <input id="uh-part-q" type="text" placeholder="Part number (no brand needed)">
             <button id="uh-find-part">Search Part</button>
           </div>
-          <label><input type="checkbox" id="toggleJson"> Show raw JSON</label>
+          ${debugMode ? '<label><input type="checkbox" id="toggleJson"> Show raw JSON</label>' : ''}
         </div>`;
 
       // Hook up actions
@@ -56,14 +59,44 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const res = await fetch(`${API_BASE}/api/part-search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partNumber: pn }) });
           const data = await res.json();
-          if (!res.ok) throw new Error(data && data.error ? data.error : 'Part search failed');
+          if (!res.ok) {
+            console.error('Part search failed', data);
+            errorContainer.innerHTML = `Part not found. ${data && data.triedMfgCodes ? 'Tried: ' + data.triedMfgCodes.join(', ') : ''}`;
+            return;
+          }
           // Render Part Details into drawer
           openPartDrawerFromGetPartsInfo(data);
         } catch (err) {
           console.error(err);
-          alert('Part not found');
+          errorContainer.innerHTML = 'Part not found (network error).';
         }
       });
+    }
+    const controls = document.querySelector('.controls');
+    if (controls) controls.style.display = 'none';
+    const tabsBar = document.querySelector('.tabs');
+    if (tabsBar) tabsBar.style.display = 'none';
+    const partsH2 = document.querySelector('#parts-tab h2');
+    if (partsH2) partsH2.style.display = 'none';
+    const diagramH2 = document.querySelector('#diagrams-tab h2');
+    if (diagramH2) diagramH2.style.display = 'none';
+
+    // Hide legacy mfgCode field and make part number primary in legacy section
+    const mfgEl = document.getElementById('mfgCode');
+    const pnEl = document.getElementById('partNumber');
+    if (mfgEl && mfgEl.parentElement) {
+      mfgEl.parentElement.style.display = 'none';
+    }
+    if (pnEl) pnEl.placeholder = 'Part number (no brand needed)';
+
+    // Hide duplicate diagram search bars; row click will auto-load diagrams
+    const modelSearchRow = (document.getElementById('modelSearch') || {}).parentElement;
+    if (modelSearchRow && modelSearchRow.classList && modelSearchRow.classList.contains('search-container')) {
+      modelSearchRow.style.display = 'none';
+    }
+    const selectedRow = (document.getElementById('selectedModelNumber') || {}).parentElement;
+    if (selectedRow && selectedRow.classList && selectedRow.classList.contains('search-container')) {
+      selectedRow.style.display = 'none';
     }
   }
 
@@ -78,28 +111,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  searchPartsBtn.addEventListener('click', () => {
-    const mfgCode = document.getElementById('mfgCode').value;
-    const partNumber = document.getElementById('partNumber').value;
+  searchPartsBtn.addEventListener('click', async () => {
+    const mfgCode = document.getElementById('mfgCode').value.trim();
+    const partNumber = document.getElementById('partNumber').value.trim();
 
     clearContainers();
 
-    if (!mfgCode || !partNumber) {
-      errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
+    if (!partNumber) {
+      errorContainer.innerHTML = 'Please enter a part number.';
       return;
     }
 
-    fetch(`${API_BASE}/api/get-parts-info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mfgCode, partNumber })
-    })
-      .then(response => response.json())
-      .then(data => displayResults(data, 'parts'))
-      .catch(error => {
-        console.error('Error:', error);
-        errorContainer.innerHTML = 'An error occurred while fetching parts info.';
-      });
+    try {
+      if (useNewUi || !mfgCode) {
+        const res = await fetch(`${API_BASE}/api/part-search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partNumber }) });
+        const data = await res.json();
+        if (!res.ok) {
+          errorContainer.innerHTML = `Part not found. ${data && data.triedMfgCodes ? 'Tried: ' + data.triedMfgCodes.join(', ') : ''}`;
+          return;
+        }
+        displayResults(data, 'parts');
+      } else {
+        const res = await fetch(`${API_BASE}/api/get-parts-info`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mfgCode, partNumber }) });
+        const data = await res.json();
+        displayResults(data, 'parts');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      errorContainer.innerHTML = 'An error occurred while fetching parts info.';
+    }
   });
 
   searchModelsBtn.addEventListener('click', () => {
@@ -281,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       <td>${sanitize(m.modelNumber)}</td>
                       <td>${sanitize(m.modelDescription)}</td>
                       <td>${sanitize(m.mfg)}</td>
-                      ${useNewUi ? '' : `<td>${sanitize(m.modelId)}</td><td><button data-role="pick-model" data-model-number="${escapeAttr(m.modelNumber)}" data-model-id="${escapeAttr(m.modelId)}">Use</button></td>`}
+                      ${useNewUi ? '' : `<td>${sanitize(m.modelId)}</td><td><button data-role=\"pick-model\" data-model-number=\"${escapeAttr(m.modelNumber)}\" data-model-id=\"${escapeAttr(m.modelId)}\">Use</button></td>`}
                     </tr>
                   `).join('')}
                 </tbody>
@@ -525,20 +565,20 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card">
             <h3>Diagram Parts</h3>
             <table class="table" id="parts-table">
-              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link / Cart</th></tr></thead>
+              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th style="width:140px; text-align:right;">Actions</th></tr></thead>
               <tbody>
                 ${rows.map((r, idx) => `
                   <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
                     <td>${sanitize(r.itemNumber)}</td>
-                    <td>${sanitize(r.partNumber)}</td>
+                    <td class="mono">${sanitize(r.partNumber)}</td>
                     <td>${sanitize(r.partDescription)}</td>
                     <td>${sanitize(r.price)}</td>
                     <td>${sanitize(r.listPrice)}</td>
                     <td>${sanitize(r.qtyTotal)}</td>
                     <td>${sanitize(r.stock101)}</td>
-                    <td>
-                      ${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}
-                      <button style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.price)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
+                    <td style="text-align:right;">
+                      ${r.url ? `<a class="link" href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}
+                      <button class="btn-small" style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.price)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -596,10 +636,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${API_BASE}/api/part-search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partNumber }) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data && data.error ? data.error : 'Failed');
+      if (!res.ok) {
+        errorContainer.innerHTML = `Part not found. ${data && data.triedMfgCodes ? 'Tried: ' + data.triedMfgCodes.join(', ') : ''}`;
+        return;
+      }
       openPartDrawerFromGetPartsInfo(data);
     } catch (e) {
-      // Silent
+      errorContainer.innerHTML = 'Part not found (network error).';
     }
   }
 
@@ -607,6 +650,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const part = data && data.partData ? data.partData : null;
     const locations = part && Array.isArray(part.availableLocation) ? part.availableLocation : [];
     const subParts = Array.isArray(data && data.subPartData) ? data.subPartData : [];
+    const code = (data && data.return && (data.return.retCode || (data.return.commonResult && data.return.commonResult.code))) || '';
+    const statusOk = String(code).trim() === '200';
     const overlay = document.getElementById('drawer-overlay');
     const drawer = document.getElementById('part-drawer');
     if (!overlay || !drawer) return;
@@ -622,8 +667,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="k">Part #</div><div><strong>${sanitize(part && part.partNumber)}</strong></div>
         <div class="k">Description</div><div>${sanitize(part && part.partDescription)}</div>
         <div class="k">Price</div><div>$${sanitize(part && part.partPrice)} (Retail $${sanitize(part && part.retailPrice)})</div>
-        <div class="k">On Hand</div><div>${sanitize(part && part.quantityOnHand)}</div>
+        <div class="k">On Hand</div><div>${sanitize(part && part.quantityOnHand)}${statusOk ? '' : ' (unverified)'}${!statusOk ? `<span class=\"muted\"> — API retCode ${sanitize(code)}</span>` : ''}</div>
         <div class="k">Flags</div><div>Disc ${sanitize(part && part.discontinued)} · Haz ${sanitize(part && part.hazmat)} · Ovr ${sanitize(part && part.oversize)}</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; margin:10px 0;">
+        <input id="drawer-qty" type="number" min="1" value="1" style="width:80px; padding:8px; border:1px solid var(--border); border-radius:8px;" />
+        <button id="drawer-add" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && part.partPrice)}">Add to Cart</button>
       </div>
       ${locations.length ? `<div style="margin:10px 0;">
         <h4 style="margin:6px 0;">Availability by Location</h4>
@@ -640,6 +689,17 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     const closeBtn = document.getElementById('drawer-close');
     if (closeBtn) closeBtn.onclick = closeDrawer;
+    const addBtn = document.getElementById('drawer-add');
+    if (addBtn) {
+      addBtn.onclick = () => {
+        const qtyInput = document.getElementById('drawer-qty');
+        const qty = Math.max(1, parseInt(qtyInput && qtyInput.value ? qtyInput.value : '1', 10) || 1);
+        const partNumber = addBtn.getAttribute('data-part-number') || '';
+        const partDescription = addBtn.getAttribute('data-part-description') || '';
+        const price = parseFloat(addBtn.getAttribute('data-price') || '0') || 0;
+        addToCart({ partNumber, partDescription, price, qty });
+      };
+    }
   }
 
   function closeDrawer() {

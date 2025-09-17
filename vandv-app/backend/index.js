@@ -20,11 +20,56 @@ const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
 const FRONTEND_URL = process.env.FRONTEND_URL || '';
 
+// Manufacturer codes: union of known common codes used by V&V
+// Note: Some vendors differ (e.g., Whirlpool: WHP vs WHI; GE: GEA vs GEN). Keep both.
+const MFG_CODE_NAME_MAP = {
+  WHP: 'Whirlpool',
+  WHI: 'Whirlpool',
+  FRG: 'Frigidaire',
+  FRI: 'Freon/Frigidaire (alt)',
+  SAM: 'Samsung',
+  LG: 'LG Appliance Parts',
+  GEA: 'GE Appliances',
+  GEN: 'General Electric',
+  SUB: 'Sub-Zero',
+  SPE: 'Speed Queen',
+  MAY: 'Maytag',
+  WHR: 'White-Rodgers',
+  BRO: 'Broan',
+  BSH: 'Bosch',
+  GDM: 'Goodman',
+  LEN: 'Lennox',
+  HON: 'Honeywell',
+  TRI: 'Tri-Dim Filter Corp',
+  ULI: 'U-Line',
+  USI: 'USI',
+  NUT: 'Nutone',
+  ERP: 'ERP',
+};
+
+// Default probe order emphasizes kitchen/major appliance brands first
+const DEFAULT_MFG_CODES = [
+  'WHP', 'WHI', 'FRG', 'FRI', 'SAM', 'LG', 'GEA', 'GEN', 'MAY', 'BSH', 'BRO', 'SUB', 'SPE', 'WHR', 'GDM', 'LEN', 'HON', 'ULI', 'USI', 'NUT', 'ERP'
+];
+
+// Full probe list (expanded from provided catalog)
+const FULL_MFG_CODES = [
+  'ACM', 'AIR', 'ALL', 'AME', 'APR', 'ATX', 'AQD', 'BRA', 'BIN', 'BRO', 'BRY', 'BSH', 'CAP', 'CAR', 'CHR', 'COE', 'COL', 'DUP', 'DUR', 'EAT', 'EMR', 'ERP', 'ESC', 'EUR', 'EVP', 'EZF', 'FAS', 'FED', 'FLO', 'FRI', 'FRG', 'GAL', 'GAT', 'GDM', 'GEM', 'GEN', 'GEO', 'GLS', 'GRN', 'HAR', 'HON', 'HOR', 'HRP', 'HRT', 'ICM', 'ICS', 'ILE', 'JOG', 'LAN', 'LEN', 'LG', 'LIT', 'LKI', 'LOB', 'LUX', 'MAL', 'MAN', 'MAR', 'MAS', 'MAY', 'MCM', 'MET', 'MID', 'MIS', 'NEL', 'NUA', 'NUT', 'PAC', 'PEE', 'RBN', 'RBS', 'RED', 'RPC', 'RTS', 'SAM', 'SEN', 'SPA', 'SPE', 'STA', 'STH', 'SUB', 'SUP', 'TEL', 'TRA', 'TRI', 'ULI', 'UNI', 'USI', 'UNV', 'VAL', 'VAN', 'VNT', 'WAT', 'WEL', 'WHI', 'WHR', 'YEL', 'YTS', 'WHP', 'GEA'
+];
+
 app.get('/api/stripe-config', (req, res) => {
   if (!STRIPE_PUBLISHABLE_KEY) {
     return res.status(400).json({ error: 'Stripe publishable key not configured' });
   }
   res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY, currency: CURRENCY });
+});
+
+// Expose manufacturer codes to the frontend
+app.get('/api/mfg-codes', (req, res) => {
+  const envCodes = (process.env.PROBE_MFG_CODES || '').split(',').map(s => s.trim()).filter(Boolean);
+  const codes = envCodes.length ? envCodes : DEFAULT_MFG_CODES;
+  const result = codes.map(code => ({ code, name: MFG_CODE_NAME_MAP[code] || '' }));
+  res.json(result);
 });
 
 app.post('/api/checkout/session', async (req, res) => {
@@ -221,9 +266,31 @@ app.post('/api/part-search', async (req, res) => {
 
   // Allow override via env or request body; keep a conservative default list
   const envCodes = (process.env.PROBE_MFG_CODES || '').split(',').map(s => s.trim()).filter(Boolean);
-  const codes = Array.isArray(mfgCodes) && mfgCodes.length
-    ? mfgCodes
-    : (envCodes.length ? envCodes : ['WHP', 'SAM', 'FRI', 'ELX', 'GEA', 'LG']);
+  let codes = Array.isArray(mfgCodes) && mfgCodes.length
+    ? [...mfgCodes]
+    : (envCodes.length ? [...envCodes] : [...DEFAULT_MFG_CODES]);
+  // If explicit flag is set, use full probe list to maximize coverage
+  if (!mfgCodes && !envCodes.length && process.env.USE_FULL_PROBE === '1') {
+    codes = [...FULL_MFG_CODES];
+  }
+
+  // Heuristic prioritization by part number patterns (helps match correct brand faster)
+  try {
+    const pn = String(partNumber).toUpperCase();
+    const moveToFront = (c) => { const i = codes.indexOf(c); if (i > 0) { codes.splice(i, 1); codes.unshift(c); } };
+    if (/^530\d{6,}$/.test(pn)) { // Many Frigidaire/Electrolux numbers
+      moveToFront('FRG'); moveToFront('FRI');
+    }
+    if (/^WP?\d+/.test(pn) || /^\d{5,}$/.test(pn)) { // Common Whirlpool numerics (e.g., 341241)
+      moveToFront('WHP');
+    }
+    if (/^DA|^DG|^DC|^DE|^BN/i.test(pn)) { // Samsung prefixes
+      moveToFront('SAM');
+    }
+    if (/^MEF|^ABQ|^AJP|^Z|^EBR|^MDS/i.test(pn)) { // LG-like
+      moveToFront('LG');
+    }
+  } catch (_) { /* ignore */ }
 
   const url = 'https://soapbeta.streamflow.ca/vandvapi/GetPartsInfo';
 
@@ -236,8 +303,11 @@ app.post('/api/part-search', async (req, res) => {
     try {
       const response = await axios.post(url, payload);
       const data = response.data || {};
+      const ret = data && data.return ? data.return : {};
+      const retCode = String(ret.retCode || (ret.commonResult && ret.commonResult.code) || '').trim();
       const hasPart = data && data.partData && data.partData.partNumber;
-      if (hasPart) {
+      const isSuccess = hasPart && retCode === '200';
+      if (isSuccess) {
         return res.json({
           matchedMfgCode: code,
           triedMfgCodes: codes,
