@@ -1,6 +1,6 @@
 body {
     font-family: sans-serif;
-    background-color: #f4f4f4;
+    background-color: #f4f6f8;
     color: #333;
     margin: 0;
     padding: 20px;
@@ -13,6 +13,7 @@ body {
     --muted: #6b7280;
     --border: #e5e7eb;
     --card: #fafafa;
+    --bg: #f4f6f8;
 }
 
 .container {
@@ -87,6 +88,34 @@ h1 {
 
 .search-container button:active {
     transform: translateY(1px);
+}
+
+/* Unified header (feature flag) */
+.unified-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.unified-input {
+    display: flex;
+    gap: 8px;
+}
+
+.unified-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
 }
 
 #results-container {
@@ -273,6 +302,40 @@ h1 {
     top: 0;
     background: var(--surface);
     z-index: 1;
+}
+
+/* Drawer */
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .3);
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(520px, 95vw);
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, .1);
+    padding: 16px;
+    overflow: auto;
+}
+
+.drawer h3 {
+    margin-top: 0;
+}
+
+.kv {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 6px 12px;
+}
+
+.kv div.k {
+    color: var(--muted);
 }
 
 @media (max-width: 700px) {

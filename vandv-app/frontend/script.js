@@ -2,12 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const API_BASE = location.hostname.includes('localhost')
     ? 'http://localhost:3001'
     : 'https://rocparts-api.onrender.com';
-    const searchPartsBtn = document.getElementById('searchPartsBtn');
+  const useNewUi = new URLSearchParams(location.search).has('new');
+  const searchPartsBtn = document.getElementById('searchPartsBtn');
   const searchModelsBtn = document.getElementById('searchModelsBtn');
   const getDiagramsBtn = document.getElementById('getDiagramsBtn');
-    const resultsContainer = document.getElementById('results-container');
-    const errorContainer = document.getElementById('error-container');
-    const apiStatusContainer = document.getElementById('api-status-container');
+  const resultsContainer = document.getElementById('results-container');
+  const errorContainer = document.getElementById('error-container');
+  const apiStatusContainer = document.getElementById('api-status-container');
   const toggleJson = document.getElementById('toggleJson');
   const cartContainer = document.getElementById('cart-container');
   const tabs = document.querySelectorAll('.tab-button');
@@ -16,6 +17,55 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cart state
   let cart = loadCartFromStorage();
   renderCart();
+
+  // Inject Unified Header under feature flag
+  if (useNewUi) {
+    const headerAnchor = document.getElementById('unified-header-anchor');
+    if (headerAnchor) {
+      headerAnchor.innerHTML = `
+        <div class="unified-header">
+          <div class="unified-input">
+            <input id="uh-model-q" type="text" placeholder="Model number (partial ok)">
+            <button id="uh-find-models">Find Models</button>
+          </div>
+          <div class="unified-input">
+            <input id="uh-part-q" type="text" placeholder="Part number (no brand needed)">
+            <button id="uh-find-part">Search Part</button>
+          </div>
+          <label><input type="checkbox" id="toggleJson"> Show raw JSON</label>
+        </div>`;
+
+      // Hook up actions
+      document.getElementById('uh-find-models').addEventListener('click', () => {
+        const q = document.getElementById('uh-model-q').value.trim();
+        if (!q) return;
+        // Mirror legacy fields for downstream functions
+        document.getElementById('modelSearch').value = q;
+        searchModelsBtn.click();
+        // Switch to diagrams tab for visibility
+        const btn = Array.from(tabs).find(b => b.getAttribute('data-tab') === 'diagrams-tab');
+        if (btn) btn.click();
+      });
+      document.getElementById('uh-part-q').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('uh-find-part').click();
+      });
+      document.getElementById('uh-find-part').addEventListener('click', async () => {
+        const pn = document.getElementById('uh-part-q').value.trim();
+        if (!pn) return;
+        clearContainers();
+        try {
+          const res = await fetch(`${API_BASE}/api/part-search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partNumber: pn }) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data && data.error ? data.error : 'Part search failed');
+          // Render Part Details into drawer
+          openPartDrawerFromGetPartsInfo(data);
+        } catch (err) {
+          console.error(err);
+          alert('Part not found');
+        }
+      });
+    }
+  }
 
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -28,46 +78,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-    searchPartsBtn.addEventListener('click', () => {
-        const mfgCode = document.getElementById('mfgCode').value;
-        const partNumber = document.getElementById('partNumber').value;
+  searchPartsBtn.addEventListener('click', () => {
+    const mfgCode = document.getElementById('mfgCode').value;
+    const partNumber = document.getElementById('partNumber').value;
 
-        clearContainers();
+    clearContainers();
 
-        if (!mfgCode || !partNumber) {
-            errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
-            return;
-        }
+    if (!mfgCode || !partNumber) {
+      errorContainer.innerHTML = 'Please enter both a manufacturer code and a part number.';
+      return;
+    }
 
     fetch(`${API_BASE}/api/get-parts-info`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mfgCode, partNumber })
-        })
-            .then(response => response.json())
-            .then(data => displayResults(data, 'parts'))
-            .catch(error => {
-                console.error('Error:', error);
-                errorContainer.innerHTML = 'An error occurred while fetching parts info.';
-            });
-    });
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mfgCode, partNumber })
+    })
+      .then(response => response.json())
+      .then(data => displayResults(data, 'parts'))
+      .catch(error => {
+        console.error('Error:', error);
+        errorContainer.innerHTML = 'An error occurred while fetching parts info.';
+      });
+  });
 
   searchModelsBtn.addEventListener('click', () => {
     const modelNumber = document.getElementById('modelSearch').value;
 
-        clearContainers();
+    clearContainers();
 
-        if (!modelNumber) {
+    if (!modelNumber) {
       errorContainer.innerHTML = 'Please enter a model number (partial ok).';
-            return;
-        }
+      return;
+    }
 
     fetch(`${API_BASE}/api/model-search`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modelNumber })
-        })
-            .then(response => response.json())
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelNumber })
+    })
+      .then(response => response.json())
       .then(data => {
         displayResults(data, 'models');
         const first = Array.isArray(data) && data.length ? data[0] : null;
@@ -107,20 +157,20 @@ document.addEventListener('DOMContentLoaded', () => {
           setSelectedCard(first.diagramId);
         }
       })
-            .catch(error => {
-                console.error('Error:', error);
-                errorContainer.innerHTML = 'An error occurred while fetching diagrams.';
-            });
-    });
+      .catch(error => {
+        console.error('Error:', error);
+        errorContainer.innerHTML = 'An error occurred while fetching diagrams.';
+      });
+  });
 
 
-    function clearContainers() {
-        resultsContainer.innerHTML = '';
-        errorContainer.innerHTML = '';
-        apiStatusContainer.innerHTML = '';
-    }
+  function clearContainers() {
+    resultsContainer.innerHTML = '';
+    errorContainer.innerHTML = '';
+    apiStatusContainer.innerHTML = '';
+  }
 
-    function displayResults(data, type) {
+  function displayResults(data, type) {
     const title = type === 'parts' ? 'Parts Info' :
       type === 'models' ? 'Model Search Results' :
         type === 'diagrams' ? 'Diagrams' :
@@ -224,15 +274,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="card">
               <h3>Models</h3>
               <table class="table">
-                <thead><tr><th>Model #</th><th>Description</th><th>Mfg</th><th>Model ID</th><th>Select</th></tr></thead>
+                <thead><tr><th>Model #</th><th>Description</th><th>Mfg</th>${useNewUi ? '' : '<th>Model ID</th><th>Select</th>'}</tr></thead>
                 <tbody>
                   ${models.map((m, idx) => `
                     <tr data-role="model-row" data-model-number="${escapeAttr(m.modelNumber)}" data-model-id="${escapeAttr(m.modelId)}">
                       <td>${sanitize(m.modelNumber)}</td>
                       <td>${sanitize(m.modelDescription)}</td>
                       <td>${sanitize(m.mfg)}</td>
-                      <td>${sanitize(m.modelId)}</td>
-                      <td><button data-role="pick-model" data-model-number="${escapeAttr(m.modelNumber)}" data-model-id="${escapeAttr(m.modelId)}">Use</button></td>
+                      ${useNewUi ? '' : `<td>${sanitize(m.modelId)}</td><td><button data-role="pick-model" data-model-number="${escapeAttr(m.modelNumber)}" data-model-id="${escapeAttr(m.modelId)}">Use</button></td>`}
                     </tr>
                   `).join('')}
                 </tbody>
@@ -240,6 +289,23 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
     resultsContainer.innerHTML = table;
+
+    // When new UI, make row click select and load diagrams automatically
+    if (useNewUi) {
+      const rows = resultsContainer.querySelectorAll('[data-role="model-row"]');
+      rows.forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          const modelNumber = row.getAttribute('data-model-number') || '';
+          const modelId = row.getAttribute('data-model-id') || '';
+          document.getElementById('selectedModelNumber').value = modelNumber;
+          document.getElementById('selectedModelId').value = modelId;
+          getDiagramsBtn.click();
+          const btn = Array.from(tabs).find(b => b.getAttribute('data-tab') === 'diagrams-tab');
+          if (btn) btn.click();
+        });
+      });
+    }
   }
 
   function renderDiagramsResult(diagrams) {
@@ -322,6 +388,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const modelId = target.getAttribute('data-model-id') || '';
       document.getElementById('selectedModelNumber').value = modelNumber;
       document.getElementById('selectedModelId').value = modelId;
+      if (useNewUi) {
+        getDiagramsBtn.click();
+      }
     }
     if (target && target.getAttribute('data-role') === 'pick-diagram') {
       const diagramId = target.getAttribute('data-diagram-id') || '';
@@ -344,6 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceStr = target.getAttribute('data-price') || '0';
       const price = parseFloat(priceStr) || 0;
       addToCart({ partNumber, partDescription, price, qty: 1 });
+      if (useNewUi) {
+        // Open drawer quick view by fetching rich info number-only
+        openPartDrawerByNumber(partNumber);
+      }
     }
   });
 
@@ -518,6 +591,64 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Drawer helpers (new UI)
+  async function openPartDrawerByNumber(partNumber) {
+    try {
+      const res = await fetch(`${API_BASE}/api/part-search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partNumber }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data && data.error ? data.error : 'Failed');
+      openPartDrawerFromGetPartsInfo(data);
+    } catch (e) {
+      // Silent
+    }
+  }
+
+  function openPartDrawerFromGetPartsInfo(data) {
+    const part = data && data.partData ? data.partData : null;
+    const locations = part && Array.isArray(part.availableLocation) ? part.availableLocation : [];
+    const subParts = Array.isArray(data && data.subPartData) ? data.subPartData : [];
+    const overlay = document.getElementById('drawer-overlay');
+    const drawer = document.getElementById('part-drawer');
+    if (!overlay || !drawer) return;
+    overlay.style.display = 'block';
+    drawer.style.display = 'block';
+    overlay.onclick = closeDrawer;
+    drawer.innerHTML = `
+      <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:8px;">
+        <h3>Part Details</h3>
+        <button id="drawer-close" class="btn-link">Close</button>
+      </div>
+      <div class="kv" style="margin-bottom:8px;">
+        <div class="k">Part #</div><div><strong>${sanitize(part && part.partNumber)}</strong></div>
+        <div class="k">Description</div><div>${sanitize(part && part.partDescription)}</div>
+        <div class="k">Price</div><div>$${sanitize(part && part.partPrice)} (Retail $${sanitize(part && part.retailPrice)})</div>
+        <div class="k">On Hand</div><div>${sanitize(part && part.quantityOnHand)}</div>
+        <div class="k">Flags</div><div>Disc ${sanitize(part && part.discontinued)} · Haz ${sanitize(part && part.hazmat)} · Ovr ${sanitize(part && part.oversize)}</div>
+      </div>
+      ${locations.length ? `<div style="margin:10px 0;">
+        <h4 style="margin:6px 0;">Availability by Location</h4>
+        <table class="table"><thead><tr><th>Loc</th><th>Name</th><th>Qty</th></tr></thead><tbody>
+          ${locations.map(l => `<tr><td>${sanitize(l.locationId)}</td><td>${sanitize(l.locationName)}</td><td>${sanitize(l.availableQuantity)}</td></tr>`).join('')}
+        </tbody></table>
+      </div>` : ''}
+      ${subParts.length ? `<div style="margin:10px 0;">
+        <h4 style="margin:6px 0;">Sub Parts / Replacements</h4>
+        <table class="table"><thead><tr><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>QOH</th><th></th></tr></thead><tbody>
+          ${subParts.map(sp => `<tr><td>${sanitize(sp.partNumber)}</td><td>${sanitize(sp.partDescription)}</td><td>${sanitize(sp.partPrice)}</td><td>${sanitize(sp.retailPrice)}</td><td>${sanitize(sp.quantityOnHand)}</td><td><button data-role="add-to-cart" data-part-number="${escapeAttr(sp.partNumber)}" data-part-description="${escapeAttr(sp.partDescription)}" data-price="${escapeAttr(sp.partPrice)}">Add</button></td></tr>`).join('')}
+        </tbody></table>
+      </div>` : ''}
+    `;
+    const closeBtn = document.getElementById('drawer-close');
+    if (closeBtn) closeBtn.onclick = closeDrawer;
+  }
+
+  function closeDrawer() {
+    const overlay = document.getElementById('drawer-overlay');
+    const drawer = document.getElementById('part-drawer');
+    if (overlay) overlay.style.display = 'none';
+    if (drawer) drawer.style.display = 'none';
+  }
+
   function sanitize(value) {
     if (value === null || value === undefined) return '';
     return String(value)
@@ -661,5 +792,5 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(e);
       alert('Checkout failed: ' + (e && e.message ? e.message : 'Unknown error'));
     }
-    }
+  }
 });

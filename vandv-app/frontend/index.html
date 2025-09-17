@@ -11,6 +11,8 @@
 <body>
     <div class="container">
         <h1>V&V Parts & Diagrams</h1>
+        <!-- Unified header will be injected here when ?new=1 -->
+        <div id="unified-header-anchor"></div>
         <div class="tabs">
             <button class="tab-button active" data-tab="parts-tab">Parts</button>
             <button class="tab-button" data-tab="diagrams-tab">Diagrams</button>
@@ -43,6 +45,9 @@
         <div id="results-container"></div>
         <div id="error-container"></div>
     </div>
+    <!-- Part Details Drawer (feature-flagged) -->
+    <div id="drawer-overlay" class="drawer-overlay" style="display:none"></div>
+    <aside id="part-drawer" class="drawer" style="display:none"></aside>
     <script src="https://js.stripe.com/v3/"></script>
     <script src="script.js"></script>
 </body>

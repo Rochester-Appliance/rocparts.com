@@ -212,6 +212,46 @@ app.post('/api/get-parts-info', async (req, res) => {
   }
 });
 
+// Number-only Part Search: probes multiple mfgCodes until a hit
+app.post('/api/part-search', async (req, res) => {
+  const { partNumber, mfgCodes } = req.body || {};
+  if (!partNumber) {
+    return res.status(400).json({ error: 'Missing partNumber' });
+  }
+
+  // Allow override via env or request body; keep a conservative default list
+  const envCodes = (process.env.PROBE_MFG_CODES || '').split(',').map(s => s.trim()).filter(Boolean);
+  const codes = Array.isArray(mfgCodes) && mfgCodes.length
+    ? mfgCodes
+    : (envCodes.length ? envCodes : ['WHP', 'SAM', 'FRI', 'ELX', 'GEA', 'LG']);
+
+  const url = 'https://soapbeta.streamflow.ca/vandvapi/GetPartsInfo';
+
+  for (const code of codes) {
+    const payload = {
+      commonHeader: { user: 'M1945', password: '9dVxdym69mNs3G8' },
+      mfgCode: code,
+      partNumber,
+    };
+    try {
+      const response = await axios.post(url, payload);
+      const data = response.data || {};
+      const hasPart = data && data.partData && data.partData.partNumber;
+      if (hasPart) {
+        return res.json({
+          matchedMfgCode: code,
+          triedMfgCodes: codes,
+          ...data,
+        });
+      }
+    } catch (err) {
+      // Continue to next code on 4xx/5xx; only fail after exhausting the list
+    }
+  }
+
+  return res.status(404).json({ error: 'Part not found for any probed mfgCode', triedMfgCodes: codes });
+});
+
 app.post('/api/model-search', async (req, res) => {
   const { modelNumber } = req.body;
 
