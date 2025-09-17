@@ -67,7 +67,7 @@ app.get('/api/stripe-config', (req, res) => {
 // Expose manufacturer codes to the frontend
 app.get('/api/mfg-codes', (req, res) => {
   const envCodes = (process.env.PROBE_MFG_CODES || '').split(',').map(s => s.trim()).filter(Boolean);
-  const codes = envCodes.length ? envCodes : DEFAULT_MFG_CODES;
+  const codes = envCodes.length ? envCodes : FULL_MFG_CODES;
   const result = codes.map(code => ({ code, name: MFG_CODE_NAME_MAP[code] || '' }));
   res.json(result);
 });
@@ -268,11 +268,7 @@ app.post('/api/part-search', async (req, res) => {
   const envCodes = (process.env.PROBE_MFG_CODES || '').split(',').map(s => s.trim()).filter(Boolean);
   let codes = Array.isArray(mfgCodes) && mfgCodes.length
     ? [...mfgCodes]
-    : (envCodes.length ? [...envCodes] : [...DEFAULT_MFG_CODES]);
-  // If explicit flag is set, use full probe list to maximize coverage
-  if (!mfgCodes && !envCodes.length && process.env.USE_FULL_PROBE === '1') {
-    codes = [...FULL_MFG_CODES];
-  }
+    : (envCodes.length ? [...envCodes] : [...FULL_MFG_CODES]);
 
   // Heuristic prioritization by part number patterns (helps match correct brand faster)
   try {
