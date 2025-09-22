@@ -127,10 +127,7 @@ app.post('/api/checkout/session', async (req, res) => {
             display_name: 'Pickup at Rochester Appliance (Henrietta Store)',
             type: 'fixed_amount',
             fixed_amount: { amount: 0, currency: CURRENCY },
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: 0 },
-              maximum: { unit: 'business_day', value: 0 },
-            },
+            // No delivery_estimate for pickup; 0 can cause Stripe validation errors
           },
         },
         {
@@ -139,7 +136,7 @@ app.post('/api/checkout/session', async (req, res) => {
             type: 'fixed_amount',
             fixed_amount: { amount: 1500, currency: CURRENCY },
             delivery_estimate: {
-              minimum: { unit: 'business_day', value: 2 },
+              minimum: { unit: 'business_day', value: 1 },
               maximum: { unit: 'business_day', value: 2 },
             },
           },
