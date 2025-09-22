@@ -111,9 +111,42 @@ app.post('/api/checkout/session', async (req, res) => {
       line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,
+      phone_number_collection: { enabled: true },
+      custom_fields: [
+        {
+          key: 'phone',
+          label: { type: 'custom', custom: 'Phone number' },
+          type: 'text',
+          optional: false,
+        },
+      ],
+      shipping_address_collection: { allowed_countries: ['US'] },
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            display_name: 'Pickup at Rochester Appliance (Henrietta Store)',
+            type: 'fixed_amount',
+            fixed_amount: { amount: 0, currency: CURRENCY },
+            delivery_estimate: {
+              minimum: { unit: 'business_day', value: 0 },
+              maximum: { unit: 'business_day', value: 0 },
+            },
+          },
+        },
+        {
+          shipping_rate_data: {
+            display_name: 'Drop Ship (2 business days)',
+            type: 'fixed_amount',
+            fixed_amount: { amount: 1500, currency: CURRENCY },
+            delivery_estimate: {
+              minimum: { unit: 'business_day', value: 2 },
+              maximum: { unit: 'business_day', value: 2 },
+            },
+          },
+        },
+      ],
       allow_promotion_codes: false,
       billing_address_collection: 'auto',
-      shipping_address_collection: { allowed_countries: ['US'] },
     });
 
     res.json({ id: session.id });
@@ -139,7 +172,11 @@ app.get('/api/checkout/session/:id', async (req, res) => {
       id: session.id,
       currency: session.currency,
       amount_total: session.amount_total,
+      shipping_cost: session.shipping_cost || null,
+      shipping_details: session.shipping_details || null,
+      custom_fields: session.custom_fields || [],
       customer_email: session.customer_details ? session.customer_details.email : undefined,
+      customer_phone: session.customer_details ? session.customer_details.phone : undefined,
       items: (lineItems.data || []).map(li => ({
         description: li.description,
         amount_subtotal: li.amount_subtotal,
@@ -172,9 +209,16 @@ app.get('/stripe/success/:sid', async (req, res) => {
       <tr><td>${li.description || ''}</td><td style="text-align:right;">${li.quantity || 1}</td><td style="text-align:right;">$${(li.amount_subtotal / 100).toFixed(2)}</td></tr>
     `).join('');
     res.setHeader('Content-Type', 'text/html');
+    const shippingChoice = session.shipping_cost && session.shipping_cost.shipping_rate ? 'Shipping' : (session.shipping_cost && session.shipping_cost.amount_total === 0 ? 'Pickup' : '');
+    const phoneField = Array.isArray(session.custom_fields) ? session.custom_fields.find(f => f.key === 'phone') : null;
+    const phoneDisplay = (session.customer_details && session.customer_details.phone) || (phoneField && phoneField.text && phoneField.text.value) || '';
+    const pickupNote = 'Pickup at Rochester Appliance (Henrietta Store) — 585-272-9933, 2975 Brighton Henrietta Town Line Rd';
+    const shipNote = 'Drop Ship — Arrives within two business days.';
     res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Payment successful</title></head><body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:24px;">
       <h2>Payment successful</h2>
       <p>Session: ${session.id}</p>
+      ${shippingChoice ? `<p><strong>Fulfillment:</strong> ${shippingChoice === 'Pickup' ? pickupNote : shipNote}</p>` : ''}
+      ${phoneDisplay ? `<p><strong>Phone:</strong> ${phoneDisplay}</p>` : ''}
       <table style="width:100%; max-width:720px; border-collapse: collapse;">
         <thead><tr><th style="text-align:left;">Item</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Subtotal</th></tr></thead>
         <tbody>${itemsHtml}</tbody>
