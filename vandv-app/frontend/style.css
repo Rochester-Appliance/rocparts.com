@@ -7,8 +7,9 @@ body {
 }
 
 :root {
-    --brand: #0b6efd;
-    --brand-600: #0a58ca;
+    --brand: #0a4cba;
+    /* Rochester blue */
+    --brand-600: #083e97;
     --surface: #ffffff;
     --muted: #6b7280;
     --border: #e5e7eb;
@@ -23,6 +24,65 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Brand header */
+.brand-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-items: center;
+    padding: 24px 16px 18px;
+    margin-bottom: 12px;
+    background: radial-gradient(1200px 240px at 50% -60px, rgba(10, 76, 186, .18), transparent), linear-gradient(180deg, #f7faff, #ffffff 50%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+
+.brand-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0a2a66;
+}
+
+.brand-sub {
+    color: #0a2a66;
+    opacity: .8;
+    font-weight: 600;
+}
+
+.cart-icon {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.cart-emoji {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--brand);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0 6px;
+    font-size: 12px;
+    line-height: 18px;
 }
 
 .tabs {
@@ -347,16 +407,19 @@ button {
 
 .drawer {
     position: fixed;
-    top: 0;
-    right: 0;
-    width: min(560px, 95vw);
-    height: 100vh;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(720px, 95vw);
+    max-height: 85vh;
     background: var(--surface);
-    border-left: 1px solid var(--border);
-    box-shadow: -8px 0 24px rgba(0, 0, 0, .1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, .18);
     padding: 20px;
     overflow: auto;
     z-index: 1000;
+    animation: modalIn .15s ease-out;
 }
 
 .drawer h3 {
@@ -371,6 +434,18 @@ button {
 
 .kv div.k {
     color: var(--muted);
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -46%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
 }
 
 @media (max-width: 700px) {

@@ -20,22 +20,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cart state
   let cart = loadCartFromStorage();
   renderCart();
+  updateCartIconBadge();
 
   // Inject Unified Header under feature flag
   if (useNewUi) {
     const headerAnchor = document.getElementById('unified-header-anchor');
     if (headerAnchor) {
       headerAnchor.innerHTML = `
-        <div class="unified-header">
-          <div class="unified-input">
+        <div class="unified-header" style="grid-template-columns: 1fr; gap:8px;">
+          <div class="unified-input" style="grid-column:1/-1;">
             <input id="uh-model-q" type="text" placeholder="Model number (partial ok)">
             <button id="uh-find-models">Find Models</button>
           </div>
-          <div class="unified-input">
+          <div class="unified-input" style="grid-column:1/-1;">
             <input id="uh-part-q" type="text" placeholder="Part number (no brand needed)">
             <button id="uh-find-part">Search Part</button>
           </div>
-          ${debugMode ? '<label><input type="checkbox" id="toggleJson"> Show raw JSON</label>' : ''}
+          ${debugMode ? '<label style="justify-self:end;"><input type="checkbox" id="toggleJson"> Show raw JSON</label>' : ''}
         </div>`;
 
       // Hook up actions
@@ -51,6 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       document.getElementById('uh-part-q').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') document.getElementById('uh-find-part').click();
+      });
+      document.getElementById('uh-model-q').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('uh-find-models').click();
       });
       document.getElementById('uh-find-part').addEventListener('click', async () => {
         const pn = document.getElementById('uh-part-q').value.trim();
@@ -358,7 +362,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="card diagram-card" data-role="diagram-card" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">
                     <img src="${sanitize(d.diagramSmallImage)}" alt="${escapeAttr(d.sectionName)}" />
                     <div><strong>${sanitize(d.sectionName)}</strong></div>
-                    <div>ID: ${sanitize(d.diagramId)}</div>
                     <button data-role="pick-diagram" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">Select</button>
                   </div>
                 `).join('')}
@@ -398,19 +401,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card">
             <h3>Diagram Parts</h3>
             <table class="table">
-              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th>Link</th><th>Cart</th></tr></thead>
+              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Qty</th><th>Link</th><th>Cart</th></tr></thead>
               <tbody>
                 ${rows.map(r => `
                   <tr>
                     <td>${sanitize(r.itemNumber)}</td>
                     <td>${sanitize(r.partNumber)}</td>
                     <td>${sanitize(r.partDescription)}</td>
-                    <td>${sanitize(r.price)}</td>
-                    <td>${sanitize(r.listPrice)}</td>
+                    <td>$${formatMoney(r.listPrice)}</td>
                     <td>${sanitize(r.qtyTotal)}</td>
-                    <td>${sanitize(r.stock101)}</td>
                     <td>${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}</td>
-                    <td><button data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.price)}" ${(isRowAvailable(r) ? '' : 'disabled')}>Add</button></td>
+                    <td><button data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(isRowAvailable(r) ? '' : 'disabled')}>Add</button></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -565,20 +566,18 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card">
             <h3>Diagram Parts</h3>
             <table class="table" id="parts-table">
-              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>Qty</th><th>Stock(101)</th><th style="width:140px; text-align:right;">Actions</th></tr></thead>
+              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Qty</th><th style="width:140px; text-align:right;">Actions</th></tr></thead>
               <tbody>
                 ${rows.map((r, idx) => `
                   <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
                     <td>${sanitize(r.itemNumber)}</td>
                     <td class="mono">${sanitize(r.partNumber)}</td>
                     <td>${sanitize(r.partDescription)}</td>
-                    <td>${sanitize(r.price)}</td>
-                    <td>${sanitize(r.listPrice)}</td>
+                    <td>$${formatMoney(r.listPrice)}</td>
                     <td>${sanitize(r.qtyTotal)}</td>
-                    <td>${sanitize(r.stock101)}</td>
                     <td style="text-align:right;">
                       ${r.url ? `<a class="link" href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}
-                      <button class="btn-small" style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.price)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
+                      <button class="btn-small" style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -666,13 +665,13 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="kv" style="margin-bottom:8px;">
         <div class="k">Part #</div><div><strong>${sanitize(part && part.partNumber)}</strong></div>
         <div class="k">Description</div><div>${sanitize(part && part.partDescription)}</div>
-        <div class="k">Price</div><div>$${sanitize(part && part.partPrice)} (Retail $${sanitize(part && part.retailPrice)})</div>
+        <div class="k">Price</div><div>$${formatMoney(part && part.retailPrice)}</div>
         <div class="k">On Hand</div><div>${sanitize(part && part.quantityOnHand)}${statusOk ? '' : ' (unverified)'}${!statusOk ? `<span class=\"muted\"> — API retCode ${sanitize(code)}</span>` : ''}</div>
         <div class="k">Flags</div><div>Disc ${sanitize(part && part.discontinued)} · Haz ${sanitize(part && part.hazmat)} · Ovr ${sanitize(part && part.oversize)}</div>
       </div>
       <div style="display:flex; gap:8px; align-items:center; margin:10px 0;">
         <input id="drawer-qty" type="number" min="1" value="1" style="width:80px; padding:8px; border:1px solid var(--border); border-radius:8px;" />
-        <button id="drawer-add" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && part.partPrice)}">Add to Cart</button>
+        <button id="drawer-add" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && part.retailPrice)}">Add to Cart</button>
       </div>
       ${locations.length ? `<div style="margin:10px 0;">
         <h4 style="margin:6px 0;">Availability by Location</h4>
@@ -715,6 +714,12 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+  }
+
+  function formatMoney(value) {
+    const n = Number(value || 0);
+    if (!Number.isFinite(n)) return '0.00';
+    return n.toFixed(2);
   }
 
   function escapeAttr(value) {
@@ -770,6 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     saveCartToStorage();
     renderCart();
+    updateCartIconBadge();
   }
 
   function updateCartQty(index, delta) {
@@ -777,6 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cart[index].qty = Math.max(1, (cart[index].qty || 1) + delta);
     saveCartToStorage();
     renderCart();
+    updateCartIconBadge();
   }
 
   function removeFromCart(index) {
@@ -784,12 +791,22 @@ document.addEventListener('DOMContentLoaded', () => {
     cart.splice(index, 1);
     saveCartToStorage();
     renderCart();
+    updateCartIconBadge();
   }
 
   function clearCart() {
     cart = [];
     saveCartToStorage();
     renderCart();
+    updateCartIconBadge();
+  }
+
+  function updateCartIconBadge() {
+    const badge = document.getElementById('cart-badge');
+    if (!badge) return;
+    const count = cart.reduce((s, i) => s + (i.qty || 1), 0);
+    if (count > 0) { badge.style.display = 'inline-block'; badge.textContent = String(count); }
+    else { badge.style.display = 'none'; }
   }
 
   function renderCart() {

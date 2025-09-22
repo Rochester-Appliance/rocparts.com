@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart — Appliance Parts Lookup</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <h1>Cart</h1>
+            <a href="index.html" class="link">Continue shopping</a>
+        </div>
+        <div id="cart-page"></div>
+    </div>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        (function () {
+            const params = new URLSearchParams(location.search);
+            const API_BASE = params.get('api') || (location.hostname.includes('localhost') || location.protocol === 'file:' ? 'http://localhost:3001' : 'https://rocparts-api.onrender.com');
+            let cart = [];
+            try { cart = JSON.parse(localStorage.getItem('vandv_cart') || '[]') || []; } catch (e) { cart = []; }
+            const el = document.getElementById('cart-page');
+            function render() {
+                if (!cart.length) { el.innerHTML = '<div class="card"><div>Your cart is empty.</div></div>'; return; }
+                const subtotal = cart.reduce((s, i) => s + (Number(i.price || 0) * (i.qty || 1)), 0);
+                el.innerHTML = `
+          <div class="card">
+            ${cart.map((i, idx) => `
+              <div class="cart-item">
+                <div><strong>${escapeHtml(i.partNumber)}</strong><div class="muted" style="font-size:12px;">${escapeHtml(i.partDescription || '')}</div></div>
+                <div>$${Number(i.price || 0).toFixed(2)}</div>
+                <div>
+                  <button class="btn-link" data-role="dec" data-idx="${idx}">−</button>
+                  <span>${i.qty || 1}</span>
+                  <button class="btn-link" data-role="inc" data-idx="${idx}">+</button>
+                </div>
+                <div><button class="btn-link" data-role="rm" data-idx="${idx}">Remove</button></div>
+              </div>
+            `).join('')}
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+              <div style="align-self:center; margin-right:auto;"><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</div>
+              <button id="clear">Clear Cart</button>
+              <button id="checkout">Checkout</button>
+            </div>
+          </div>`;
+                bind();
+            }
+            function bind() {
+                el.querySelectorAll('[data-role="inc"]').forEach(b => b.onclick = () => { const i = +b.dataset.idx; cart[i].qty = (cart[i].qty || 1) + 1; save(); });
+                el.querySelectorAll('[data-role="dec"]').forEach(b => b.onclick = () => { const i = +b.dataset.idx; cart[i].qty = Math.max(1, (cart[i].qty || 1) - 1); save(); });
+                el.querySelectorAll('[data-role="rm"]').forEach(b => b.onclick = () => { const i = +b.dataset.idx; cart.splice(i, 1); save(); });
+                const clear = document.getElementById('clear'); if (clear) clear.onclick = () => { cart = []; save(); };
+                const checkout = document.getElementById('checkout'); if (checkout) checkout.onclick = onCheckout;
+            }
+            function save() { localStorage.setItem('vandv_cart', JSON.stringify(cart)); render(); }
+            async function onCheckout() {
+                try {
+                    if (!window.Stripe) { alert('Stripe.js not loaded'); return; }
+                    const cfgRes = await fetch(`${API_BASE}/api/stripe-config`);
+                    const cfg = await cfgRes.json();
+                    const stripe = window.Stripe(cfg.publishableKey);
+                    const payload = { items: cart.map(i => ({ partNumber: i.partNumber, partDescription: i.partDescription, price: i.price, qty: i.qty })) };
+                    const res = await fetch(`${API_BASE}/api/checkout/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const data = await res.json(); if (!res.ok) throw new Error(data && data.details || 'Failed to create session');
+                    const { error } = await stripe.redirectToCheckout({ sessionId: data.id }); if (error) alert(error.message);
+                } catch (e) { console.error(e); alert('Checkout failed: ' + (e.message || 'Unknown error')); }
+            }
+            function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+            render();
+        })();
+    </script>
+</body>
+
+</html>
+
