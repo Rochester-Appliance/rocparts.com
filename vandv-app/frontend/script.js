@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerAnchor = document.getElementById('unified-header-anchor');
     if (headerAnchor) {
       headerAnchor.innerHTML = `
-        <div class="unified-header" style="grid-template-columns: 1fr; gap:8px;">
+        <div class="unified-header" style="grid-template-columns: 1fr; gap:10px;">
           <div class="unified-input" style="grid-column:1/-1;">
             <input id="uh-model-q" type="text" placeholder="Model number (partial ok)">
             <button id="uh-find-models">Find Models</button>
