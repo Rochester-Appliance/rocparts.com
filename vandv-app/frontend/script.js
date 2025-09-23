@@ -454,6 +454,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const price = parseFloat(priceStr) || 0;
       addToCart({ partNumber, partDescription, price, qty: 1 });
       // Do not open drawer; per spec just add silently
+      try {
+        const btn = target.closest('button');
+        if (btn) {
+          const old = btn.textContent;
+          btn.disabled = true; btn.textContent = 'Added';
+          setTimeout(() => { btn.disabled = false; btn.textContent = old; }, 1000);
+        }
+      } catch (e) { }
     }
   });
 
@@ -547,14 +555,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return ai - bi;
     });
     const uniqueItems = Array.from(new Set(rows.map(r => r.itemNumber).filter(Boolean)));
-    const toolbar = ``;
+    const toolbar = `
+          <div class="quick-toolbar">
+            <div class="chip-row" id="item-chips">
+              ${uniqueItems.slice(0, 50).map(n => `<button class="chip" data-role="chip-item" data-item="${escapeAttr(n)}">${sanitize(n)}</button>`).join('')}
+            </div>
+          </div>`;
 
     const table = `
           ${toolbar}
           <div class="card">
             <h3>Find Parts</h3>
             <table class="table" id="parts-table">
-              <thead><tr><th>Diagram #</th><th>Part #</th><th>Description</th><th>Price</th><th>Ext Warehouse</th><th>In Stock</th><th style="width:140px; text-align:right;">Actions</th></tr></thead>
+              <thead><tr><th>Diagram #</th><th>Part #</th><th>Description</th><th>Price</th><th>Availability</th><th style="width:120px; text-align:center;">Add</th></tr></thead>
               <tbody>
                 ${rows.map((r, idx) => `
                   <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
@@ -562,11 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="mono">${sanitize(r.partNumber)}</td>
                     <td>${sanitize(r.partDescription)}</td>
                     <td>$${formatMoney(r.listPrice)}</td>
-                    <td>${sanitize(r.qtyTotal)}</td>
-                    <td data-role="stock-col" data-part="${escapeAttr(r.partNumber)}">...</td>
-                    <td style="text-align:right;">
-                      ${r.url ? `<a class="link" href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}
-                      <button class="btn-small" style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
+                    <td data-role="availability-col" data-part="${escapeAttr(r.partNumber)}">...</td>
+                    <td style="text-align:center;">
+                      <button class="btn-small" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -578,6 +589,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Compute stock column (our inventory + Youngstown)
     annotateStockColumns(rows);
+    // Hook up chips to jump to rows
+    const chips = document.querySelectorAll('[data-role="chip-item"]');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+        const item = chip.getAttribute('data-item') || '';
+        const row = Array.from(document.querySelectorAll('[data-role="part-row"]')).find(r => (r.getAttribute('data-item') || '') === item);
+        if (row) {
+          row.classList.add('part-row--highlight');
+          row.scrollIntoView({ block: 'center' });
+          setTimeout(() => row.classList.remove('part-row--highlight'), 1200);
+        }
+      });
+    });
   }
 
   async function annotateStockColumns(rows) {
@@ -587,15 +613,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const oursList = (inv && Array.isArray(inv.parts) ? inv.parts : []).map(p => String(p).trim().toUpperCase());
       const ours = new Set(oursList);
       window.__ours = oursList;
-      document.querySelectorAll('[data-role="stock-col"]').forEach(td => {
+      document.querySelectorAll('[data-role="availability-col"]').forEach(td => {
         const pn = (td.getAttribute('data-part') || '').toUpperCase();
         const row = rows.find(r => String(r.partNumber).toUpperCase() === pn) || {};
         const qty = parseInt(row.qtyTotal || '0', 10) || 0;
-        const status = ours.has(pn) ? 'In Stock' : (qty > 0 ? 'Available' : 'Special Order');
-        td.textContent = status;
+        // Show a single Availability value: number if >0, else "NA"
+        td.textContent = qty > 0 ? String(qty) : 'NA';
       });
     } catch (e) {
-      document.querySelectorAll('[data-role="stock-col"]').forEach(td => td.textContent = '');
+      document.querySelectorAll('[data-role="availability-col"]').forEach(td => td.textContent = '');
     }
   }
 

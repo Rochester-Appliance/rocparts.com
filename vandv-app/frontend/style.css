@@ -366,8 +366,10 @@ button {
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: #f8fafc;
+    background: #eef5ff;
     cursor: pointer;
+    color: #0a2a66;
+    font-weight: 600;
 }
 
 .chip.is-active {
