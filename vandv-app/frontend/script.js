@@ -361,8 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${diagrams.map(d => `
                   <div class="card diagram-card" data-role="diagram-card" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">
                     <img src="${sanitize(d.diagramSmallImage)}" alt="${escapeAttr(d.sectionName)}" />
-                    <div><strong>${sanitize(d.sectionName)}</strong></div>
-                    <button data-role="pick-diagram" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">Select</button>
+                    <!-- caption and select hidden per spec -->
                   </div>
                 `).join('')}
               </div>
@@ -454,10 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceStr = target.getAttribute('data-price') || '0';
       const price = parseFloat(priceStr) || 0;
       addToCart({ partNumber, partDescription, price, qty: 1 });
-      if (useNewUi) {
-        // Open drawer quick view by fetching rich info number-only
-        openPartDrawerByNumber(partNumber);
-      }
+      // Do not open drawer; per spec just add silently
     }
   });
 
@@ -551,22 +547,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return ai - bi;
     });
     const uniqueItems = Array.from(new Set(rows.map(r => r.itemNumber).filter(Boolean)));
-    const toolbar = `
-          <div class="quick-toolbar">
-            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-              <input id="parts-filter" type="text" placeholder="Filter parts (item #, part #, description)" style="flex:1; padding:8px; border:1px solid #e5e7eb; border-radius:6px;" />
-            </div>
-            <div class="chip-row" id="item-chips">
-              ${uniqueItems.slice(0, 50).map(n => `<button class="chip" data-role="chip-item" data-item="${escapeAttr(n)}">${sanitize(n)}</button>`).join('')}
-            </div>
-          </div>`;
+    const toolbar = ``;
 
     const table = `
           ${toolbar}
           <div class="card">
-            <h3>Diagram Parts</h3>
+            <h3>Find Parts</h3>
             <table class="table" id="parts-table">
-              <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Qty</th><th style="width:140px; text-align:right;">Actions</th></tr></thead>
+              <thead><tr><th>Diagram #</th><th>Part #</th><th>Description</th><th>Price</th><th>Ext Warehouse</th><th>In Stock</th><th style="width:140px; text-align:right;">Actions</th></tr></thead>
               <tbody>
                 ${rows.map((r, idx) => `
                   <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
@@ -575,6 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${sanitize(r.partDescription)}</td>
                     <td>$${formatMoney(r.listPrice)}</td>
                     <td>${sanitize(r.qtyTotal)}</td>
+                    <td data-role="stock-col" data-part="${escapeAttr(r.partNumber)}">...</td>
                     <td style="text-align:right;">
                       ${r.url ? `<a class="link" href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}
                       <button class="btn-small" style="margin-left:8px;" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
@@ -587,33 +576,27 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     container.innerHTML = table;
 
-    // Hook up filter
-    const filterInput = document.getElementById('parts-filter');
-    if (filterInput) {
-      filterInput.addEventListener('input', () => {
-        const q = filterInput.value.toLowerCase();
-        document.querySelectorAll('#parts-table tbody tr').forEach(tr => {
-          const text = tr.textContent.toLowerCase();
-          tr.style.display = text.includes(q) ? '' : 'none';
-        });
-      });
-    }
+    // Compute stock column (our inventory + Youngstown)
+    annotateStockColumns(rows);
+  }
 
-    // Hook up chips
-    const chips = document.querySelectorAll('[data-role="chip-item"]');
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        chips.forEach(c => c.classList.remove('is-active'));
-        chip.classList.add('is-active');
-        const item = chip.getAttribute('data-item') || '';
-        const row = Array.from(document.querySelectorAll('[data-role="part-row"]')).find(r => (r.getAttribute('data-item') || '') === item);
-        if (row) {
-          row.classList.add('part-row--highlight');
-          row.scrollIntoView({ block: 'center' });
-          setTimeout(() => row.classList.remove('part-row--highlight'), 1200);
-        }
+  async function annotateStockColumns(rows) {
+    try {
+      const res = await fetch(`${API_BASE}/api/our-inventory`);
+      const inv = await res.json();
+      const oursList = (inv && Array.isArray(inv.parts) ? inv.parts : []).map(p => String(p).trim().toUpperCase());
+      const ours = new Set(oursList);
+      window.__ours = oursList;
+      document.querySelectorAll('[data-role="stock-col"]').forEach(td => {
+        const pn = (td.getAttribute('data-part') || '').toUpperCase();
+        const row = rows.find(r => String(r.partNumber).toUpperCase() === pn) || {};
+        const qty = parseInt(row.qtyTotal || '0', 10) || 0;
+        const status = ours.has(pn) ? 'In Stock' : (qty > 0 ? 'Available' : 'Special Order');
+        td.textContent = status;
       });
-    });
+    } catch (e) {
+      document.querySelectorAll('[data-role="stock-col"]').forEach(td => td.textContent = '');
+    }
   }
 
   function showDiagramPreview(url) {
@@ -673,18 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <input id="drawer-qty" type="number" min="1" value="1" style="width:80px; padding:8px; border:1px solid var(--border); border-radius:8px;" />
         <button id="drawer-add" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && part.retailPrice)}">Add to Cart</button>
       </div>
-      ${locations.length ? `<div style="margin:10px 0;">
-        <h4 style="margin:6px 0;">Availability by Location</h4>
-        <table class="table"><thead><tr><th>Loc</th><th>Name</th><th>Qty</th></tr></thead><tbody>
-          ${locations.map(l => `<tr><td>${sanitize(l.locationId)}</td><td>${sanitize(l.locationName)}</td><td>${sanitize(l.availableQuantity)}</td></tr>`).join('')}
-        </tbody></table>
-      </div>` : ''}
-      ${subParts.length ? `<div style="margin:10px 0;">
-        <h4 style="margin:6px 0;">Sub Parts / Replacements</h4>
-        <table class="table"><thead><tr><th>Part #</th><th>Description</th><th>Price</th><th>Retail</th><th>QOH</th><th></th></tr></thead><tbody>
-          ${subParts.map(sp => `<tr><td>${sanitize(sp.partNumber)}</td><td>${sanitize(sp.partDescription)}</td><td>${sanitize(sp.partPrice)}</td><td>${sanitize(sp.retailPrice)}</td><td>${sanitize(sp.quantityOnHand)}</td><td><button data-role="add-to-cart" data-part-number="${escapeAttr(sp.partNumber)}" data-part-description="${escapeAttr(sp.partDescription)}" data-price="${escapeAttr(sp.partPrice)}">Add</button></td></tr>`).join('')}
-        </tbody></table>
-      </div>` : ''}
+      
     `;
     const closeBtn = document.getElementById('drawer-close');
     if (closeBtn) closeBtn.onclick = closeDrawer;
@@ -720,6 +692,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const n = Number(value || 0);
     if (!Number.isFinite(n)) return '0.00';
     return n.toFixed(2);
+  }
+
+  function computeStatusForDrawer(part) {
+    // Basic mirror of table logic: prefer our inventory; fallback to Youngstown QOH
+    const pn = (part && part.partNumber ? String(part.partNumber) : '').toUpperCase();
+    // Best effort: read cached list if annotateStockColumns fetched it already
+    try {
+      const cached = window.__ours || [];
+      if (cached.includes(pn)) return 'In Stock';
+    } catch (e) { }
+    const qoh = parseInt(part && part.quantityOnHand || '0', 10) || 0;
+    return qoh > 0 ? 'Available' : 'Special Order';
   }
 
   function escapeAttr(value) {

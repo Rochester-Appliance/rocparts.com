@@ -475,3 +475,49 @@ button {
         overflow: visible;
     }
 }
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .brand-title {
+        font-size: 20px;
+    }
+
+    .unified-header {
+        max-width: 100%;
+        padding: 12px;
+    }
+
+    .unified-input {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .unified-input input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .unified-input button {
+        width: 100%;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .viewer-title {
+        position: static;
+    }
+
+    .drawer {
+        width: 95vw;
+        max-height: 90vh;
+    }
+}
