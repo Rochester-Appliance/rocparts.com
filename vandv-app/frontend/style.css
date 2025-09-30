@@ -127,6 +127,13 @@ button {
     box-shadow: 0 16px 32px rgba(37, 99, 235, 0.24);
 }
 
+.brand-mark--logo {
+    background: none;
+    box-shadow: none;
+    object-fit: contain;
+    padding: 0;
+}
+
 .brand-copy {
     display: flex;
     flex-direction: column;
@@ -649,7 +656,9 @@ button {
 
 .diagram-card img {
     width: 100%;
+    height: auto;
     display: block;
+    object-fit: cover;
 }
 
 .diagram-card:hover {
@@ -665,17 +674,21 @@ button {
 
 #diagram-list {
     max-height: calc(100vh - 200px);
-    overflow: auto;
+    overflow-y: auto;
     padding-right: 6px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
-#diagram-list::-webkit-scrollbar {
-    width: 8px;
+#diagram-viewer {
+    min-height: 60vh;
 }
 
-#diagram-list::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.35);
-    border-radius: 999px;
+#diagram-preview-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
 }
 
 .viewer-title {
@@ -697,6 +710,10 @@ button {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.drawer {
+    overscroll-behavior: contain;
 }
 
 .chip {
@@ -850,27 +867,71 @@ button {
 @media (max-width: 1072px) {
     .workspace-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .results-panel {
+        order: 1;
     }
 
     .side-panel {
-        order: -1;
+        order: 2;
+        position: static;
+        padding: 18px;
+        border-radius: 18px;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    }
+}
+
+@media (max-width: 900px) {
+    #diagram-list {
+        max-height: none;
+        padding-right: 0;
+    }
+
+    #diagram-viewer {
+        min-height: auto;
+    }
+
+    #diagram-preview-img {
+        max-height: 55vh;
+    }
+
+    .viewer-title {
+        position: static;
+    }
+
+    .quick-toolbar {
+        position: relative;
+        top: 0;
+        margin-bottom: 12px;
     }
 }
 
 @media (max-width: 880px) {
+    .page-shell {
+        padding: 24px 16px 56px;
+    }
+
     .app-header {
         flex-direction: column;
         align-items: stretch;
+        gap: 18px;
+        padding: 18px 20px;
     }
 
     .header-actions {
         justify-content: space-between;
+        width: 100%;
     }
-}
 
-@media (max-width: 640px) {
-    .page-shell {
-        padding: 28px 16px 48px;
+    .hero {
+        gap: 28px;
+    }
+
+    .workspace {
+        padding: 20px;
+        border-radius: 22px;
     }
 
     .search-control {
@@ -881,9 +942,124 @@ button {
         width: 100%;
     }
 
-    .cart-item {
-        grid-template-columns: repeat(2, 1fr);
+    .cart-actions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .cart-summary {
+        margin-right: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-shell {
+        padding: 20px 12px 48px;
+    }
+
+    .app-header {
+        padding: 16px;
+        border-radius: 22px;
+    }
+
+    .brand {
+        flex-direction: row;
+        align-items: center;
         gap: 12px;
+    }
+
+    .hero-intro,
+    .search-card,
+    .panel {
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .cart-item {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .cart-item>div:nth-child(2),
+    .cart-item>div:nth-child(3),
+    .cart-item>div:nth-child(4) {
+        justify-self: flex-start;
+    }
+
+    .cart-actions {
+        gap: 10px;
+    }
+
+    .chip-row {
+        gap: 6px;
+    }
+
+    .chip {
+        padding: 6px 12px;
+    }
+
+    .table th,
+    .table td {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    .table.table--responsive,
+    .table.table--responsive thead,
+    .table.table--responsive tbody,
+    .table.table--responsive tr,
+    .table.table--responsive td,
+    .table.table--responsive th {
+        display: block;
+        width: 100%;
+    }
+
+    .table.table--responsive thead {
+        display: none;
+    }
+
+    .table.table--responsive tbody {
+        display: block;
+    }
+
+    .table.table--responsive tr {
+        margin-bottom: 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: var(--card);
+    }
+
+    .table.table--responsive td {
+        border: none;
+        padding: 8px 0;
+        position: relative;
+    }
+
+    .table.table--responsive td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+        margin-bottom: 4px;
+    }
+
+    .table.table--responsive .btn-small {
+        width: 100%;
+        padding: 10px 16px;
+    }
+
+    #diagram-viewer {
+        position: relative;
+        top: auto;
+    }
+
+    .card {
+        padding: 16px;
     }
 }
 
