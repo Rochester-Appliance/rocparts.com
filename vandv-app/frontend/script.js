@@ -121,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const runPartSearch = async () => {
-    const mfgField = document.getElementById('mfgCode');
     const partField = document.getElementById('partNumber');
     const partNumber = partField ? partField.value.trim() : '';
     clearContainers();
@@ -149,6 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (searchPartsBtn) {
     searchPartsBtn.addEventListener('click', runPartSearch);
+  }
+
+  const partField = document.getElementById('partNumber');
+  if (partField) {
+    partField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        runPartSearch();
+      }
+    });
   }
 
   searchModelsBtn.addEventListener('click', () => {
@@ -283,14 +291,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const locationsTable = locations.length ? `
             <div class="card">
                 <h3>Available Locations</h3>
-                <table class="table">
+                <table class="table table--responsive">
                   <thead><tr><th>Location</th><th>Name</th><th>Qty</th></tr></thead>
                   <tbody>
                     ${locations.map(loc => `
                       <tr>
-                        <td>${sanitize(loc.locationId)}</td>
-                        <td>${sanitize(loc.locationName)}</td>
-                        <td>${sanitize(loc.availableQuantity)}</td>
+                        <td data-label="Location">${sanitize(loc.locationId)}</td>
+                        <td data-label="Name">${sanitize(loc.locationName)}</td>
+                        <td data-label="Qty">${sanitize(loc.availableQuantity)}</td>
                       </tr>
                     `).join('')}
                   </tbody>
@@ -301,17 +309,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const subPartsTable = subParts.length ? `
             <div class="card">
                 <h3>Sub Parts</h3>
-                <table class="table">
+                <table class="table table--responsive">
                   <thead><tr><th>Part #</th><th>Desc</th><th>Price</th><th>Retail</th><th>QOH</th><th>Cart</th></tr></thead>
                   <tbody>
                     ${subParts.map(sp => `
                       <tr>
-                        <td>${sanitize(sp.partNumber)}</td>
-                        <td>${sanitize(sp.partDescription)}</td>
-                        <td>${sanitize(sp.partPrice)}</td>
-                        <td>${sanitize(sp.retailPrice)}</td>
-                        <td>${sanitize(sp.quantityOnHand)}</td>
-                        <td><button class="btn-primary" data-role="add-to-cart" data-part-number="${escapeAttr(sp.partNumber)}" data-part-description="${escapeAttr(sp.partDescription)}" data-price="${escapeAttr(sp.partPrice || sp.retailPrice || '0')}">Add</button></td>
+                        <td data-label="Part #">${sanitize(sp.partNumber)}</td>
+                        <td data-label="Desc">${sanitize(sp.partDescription)}</td>
+                        <td data-label="Price">${sanitize(sp.partPrice)}</td>
+                        <td data-label="Retail">${sanitize(sp.retailPrice)}</td>
+                        <td data-label="QOH">${sanitize(sp.quantityOnHand)}</td>
+                        <td data-label="Cart"><button class="btn-primary" data-role="add-to-cart" data-part-number="${escapeAttr(sp.partNumber)}" data-part-description="${escapeAttr(sp.partDescription)}" data-price="${escapeAttr(sp.partPrice || sp.retailPrice || '0')}">Add</button></td>
                       </tr>
                     `).join('')}
                   </tbody>
@@ -330,15 +338,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const table = `
             <div class="card">
               <h3>Models</h3>
-              <table class="table">
+              <table class="table table--responsive">
                 <thead><tr><th>Model #</th><th>Description</th><th>Mfg</th>${useNewUi ? '' : '<th>Model ID</th><th>Select</th>'}</tr></thead>
                 <tbody>
                   ${models.map((m, idx) => `
                     <tr data-role="model-row" data-model-number="${escapeAttr(m.modelNumber)}" data-model-id="${escapeAttr(m.modelId)}">
-                      <td>${sanitize(m.modelNumber)}</td>
-                      <td>${sanitize(m.modelDescription)}</td>
-                      <td>${sanitize(m.mfg)}</td>
-                      ${useNewUi ? '' : `<td>${sanitize(m.modelId)}</td><td><button data-role=\"pick-model\" data-model-number=\"${escapeAttr(m.modelNumber)}\" data-model-id=\"${escapeAttr(m.modelId)}\">Use</button></td>`}
+                      <td data-label="Model #">${sanitize(m.modelNumber)}</td>
+                      <td data-label="Description">${sanitize(m.modelDescription)}</td>
+                      <td data-label="Mfg">${sanitize(m.mfg)}</td>
+                      ${useNewUi ? '' : `<td data-label="Model ID">${sanitize(m.modelId)}</td><td data-label="Select"><button data-role=\"pick-model\" data-model-number=\"${escapeAttr(m.modelNumber)}\" data-model-id=\"${escapeAttr(m.modelId)}\">Use</button></td>`}
                     </tr>
                   `).join('')}
                 </tbody>
@@ -412,18 +420,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const table = `
           <div class="card">
             <h3>Diagram Parts</h3>
-            <table class="table">
+            <table class="table table--responsive">
               <thead><tr><th>Item</th><th>Part #</th><th>Description</th><th>Price</th><th>Qty</th><th>Link</th><th>Cart</th></tr></thead>
               <tbody>
                 ${rows.map(r => `
                   <tr>
-                    <td>${sanitize(r.itemNumber)}</td>
-                    <td>${sanitize(r.partNumber)}</td>
-                    <td>${sanitize(r.partDescription)}</td>
-                    <td>$${formatMoney(r.listPrice)}</td>
-                    <td>${sanitize(r.qtyTotal)}</td>
-                    <td>${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}</td>
-                    <td><button data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(isRowAvailable(r) ? '' : 'disabled')}>Add</button></td>
+                    <td data-label="Item">${sanitize(r.itemNumber)}</td>
+                    <td data-label="Part #">${sanitize(r.partNumber)}</td>
+                    <td data-label="Description">${sanitize(r.partDescription)}</td>
+                    <td data-label="Price">$${formatMoney(r.listPrice)}</td>
+                    <td data-label="Qty">${sanitize(r.qtyTotal)}</td>
+                    <td data-label="Link">${r.url ? `<a href="${escapeAttr(r.url)}" target="_blank">View</a>` : ''}</td>
+                    <td data-label="Cart"><button data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(isRowAvailable(r) ? '' : 'disabled')}>Add</button></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -579,17 +587,17 @@ document.addEventListener('DOMContentLoaded', () => {
           ${toolbar}
           <div class="card">
             <h3>Find Parts</h3>
-            <table class="table" id="parts-table">
+            <table class="table table--responsive" id="parts-table">
               <thead><tr><th>Diagram #</th><th>Part #</th><th>Description</th><th>Price</th><th>Availability</th><th style="width:120px; text-align:center;">Add</th></tr></thead>
               <tbody>
                 ${rows.map((r, idx) => `
                   <tr data-role="part-row" data-item="${escapeAttr(r.itemNumber)}">
-                    <td>${sanitize(r.itemNumber)}</td>
-                    <td class="mono">${sanitize(r.partNumber)}</td>
-                    <td>${sanitize(r.partDescription)}</td>
-                    <td>$${formatMoney(r.listPrice)}</td>
-                    <td data-role="availability-col" data-part="${escapeAttr(r.partNumber)}">...</td>
-                    <td style="text-align:center;">
+                    <td data-label="Diagram #">${sanitize(r.itemNumber)}</td>
+                    <td data-label="Part #" class="mono">${sanitize(r.partNumber)}</td>
+                    <td data-label="Description">${sanitize(r.partDescription)}</td>
+                    <td data-label="Price">$${formatMoney(r.listPrice)}</td>
+                    <td data-label="Availability" data-role="availability-col" data-part="${escapeAttr(r.partNumber)}">...</td>
+                    <td data-label="Add" style="text-align:center;">
                       <button class="btn-small" data-role="add-to-cart" data-part-number="${escapeAttr(r.partNumber)}" data-part-description="${escapeAttr(r.partDescription)}" data-price="${escapeAttr(r.listPrice)}" ${(parseInt(r.qtyTotal || '0', 10) > 0 ? '' : 'disabled')}>Add</button>
                     </td>
                   </tr>
