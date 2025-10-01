@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const Stripe = require('stripe');
+const { URL } = require('url');
 
 const app = express();
 const port = 3001;
@@ -454,6 +455,31 @@ app.post('/api/get-diagram-parts', async (req, res) => {
       error: 'Failed to get diagram parts',
       details: error.response ? error.response.data : 'An unknown error occurred',
     });
+  }
+});
+
+// Image proxy to bypass third-party CORP blocks
+app.get('/api/image-proxy', async (req, res) => {
+  try {
+    const raw = req.query.url;
+    if (!raw) return res.status(400).json({ error: 'Missing url parameter' });
+    const decoded = decodeURIComponent(raw);
+    const parsed = new URL(decoded);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return res.status(400).json({ error: 'Unsupported protocol' });
+    }
+    // Basic SSRF guard: block localhost-style targets
+    const host = parsed.hostname.toLowerCase();
+    if (['localhost', '127.0.0.1', '::1'].includes(host)) {
+      return res.status(400).json({ error: 'Host not allowed' });
+    }
+    const response = await axios.get(decoded, { responseType: 'arraybuffer' });
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    res.set('Content-Type', contentType);
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(Buffer.from(response.data, 'binary'));
+  } catch (err) {
+    res.status(502).json({ error: 'Failed to fetch image' });
   }
 });
 

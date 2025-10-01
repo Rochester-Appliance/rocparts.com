@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div id="diagram-list" class="grid">
                 ${diagrams.map(d => `
                   <div class="card diagram-card" data-role="diagram-card" data-diagram-id="${escapeAttr(d.diagramId)}" data-large="${escapeAttr(d.diagramLargeImage)}" data-section-name="${escapeAttr(d.sectionName)}">
-                    <img src="${sanitize(d.diagramSmallImage)}" alt="${escapeAttr(d.sectionName)}" />
+                    <img src="${API_BASE}/api/image-proxy?url=${encodeURIComponent(d.diagramSmallImage || '')}" alt="${escapeAttr(d.sectionName)}" />
                     <!-- caption and select hidden per spec -->
                   </div>
                 `).join('')}
@@ -508,7 +508,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function selectDiagram(diagramId, largeUrl, sectionName) {
-    showDiagramPreview(largeUrl);
+    const proxied = `${API_BASE}/api/image-proxy?url=${encodeURIComponent(largeUrl || '')}`;
+    showDiagramPreview(proxied);
     const title = document.getElementById('viewer-title');
     if (title) {
       if (sectionName) {
