@@ -16,11 +16,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartContainer = document.getElementById('cart-container');
   const tabs = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
+  const floatingCartButton = document.getElementById('floating-cart-button');
+  const floatingCartBadge = document.getElementById('floating-cart-badge');
 
   // Cart state
   let cart = loadCartFromStorage();
   renderCart();
   updateCartIconBadge();
+  ensureFloatingCartVisibility();
+
+  if (floatingCartBadge) {
+    floatingCartBadge.style.display = 'none';
+  }
+  if (floatingCartButton) {
+    floatingCartButton.addEventListener('click', () => {
+      window.location.href = 'cart.html';
+    });
+    window.addEventListener('scroll', () => {
+      ensureFloatingCartVisibility();
+    });
+  }
 
   // Unified header wiring (new UI default)
   if (useNewUi) {
@@ -840,6 +855,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = cart.reduce((s, i) => s + (i.qty || 1), 0);
     if (count > 0) { badge.style.display = 'inline-block'; badge.textContent = String(count); }
     else { badge.style.display = 'none'; }
+    if (floatingCartBadge) {
+      if (count > 0) {
+        floatingCartBadge.style.display = 'inline-flex';
+        floatingCartBadge.textContent = String(count);
+      } else {
+        floatingCartBadge.style.display = 'none';
+      }
+    }
+    ensureFloatingCartVisibility();
   }
 
   function renderCart() {
@@ -904,6 +928,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.error(e);
       alert('Checkout failed: ' + (e && e.message ? e.message : 'Unknown error'));
+    }
+  }
+
+  function ensureFloatingCartVisibility() {
+    if (!floatingCartButton) return;
+    const itemCount = cart.reduce((s, i) => s + (i.qty || 1), 0);
+    const scrolled = window.scrollY > 180;
+    if (scrolled || itemCount > 0) {
+      floatingCartButton.style.display = 'flex';
+    } else {
+      floatingCartButton.style.display = 'none';
     }
   }
 });

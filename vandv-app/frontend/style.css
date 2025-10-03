@@ -576,6 +576,50 @@ button {
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
+.floating-cart {
+    position: fixed;
+    right: clamp(16px, 4vw, 32px);
+    bottom: clamp(24px, 6vw, 48px);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 24px 48px rgba(37, 99, 235, 0.38);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    z-index: 1000;
+}
+
+.floating-cart:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 28px 52px rgba(37, 99, 235, 0.42);
+}
+
+.floating-cart__icon {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+}
+
+.floating-cart__badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 26px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 13px;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.2);
+}
+
 .btn-small {
     padding: 8px 12px;
     border-radius: 10px;
