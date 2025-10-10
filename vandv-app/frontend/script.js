@@ -48,22 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="search-card">
               <div class="search-label">Model lookup</div>
               <div class="search-control">
-                <input id="uh-model-q" type="text" placeholder="Ex: ECWM3012A" autocomplete="off">
+                <input id="uh-model-q" type="text" placeholder="Model number (partial ok)" autocomplete="off">
                 <button id="uh-find-models" type="button">
-                  <span>Explore diagrams</span>
+                  <span>Find models</span>
                 </button>
               </div>
               <p class="search-hint">Partial numbers welcome — we auto-select the first match.</p>
             </div>
             <div class="search-card">
-              <div class="search-label">Part intelligence</div>
+              <div class="search-label">Part search</div>
               <div class="search-control">
-                <input id="uh-part-q" type="text" placeholder="Drop a part number (e.g., 341241)" autocomplete="off">
+                <input id="uh-part-q" type="text" placeholder="Part number (no brand needed)" autocomplete="off">
                 <button id="uh-find-part" type="button">
-                  <span>Inspect part</span>
+                  <span>Search part</span>
                 </button>
               </div>
-              <p class="search-hint">No manufacturer required. We probe every code until we find a verified hit.</p>
+              <p class="search-hint">We search across all manufacturers to find a verified match.</p>
             </div>
           </div>`;
       }
@@ -295,10 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="card">
                 <h3>Part</h3>
                 <div><strong>${sanitize(part && part.partNumber)}</strong> — ${sanitize(part && part.partDescription)}</div>
-                <div>Price: $${sanitize(part && part.partPrice)} | Retail: $${sanitize(part && part.retailPrice)} | Qty On Hand: ${sanitize(part && part.quantityOnHand)}</div>
-                <div>Flags: Discontinued ${sanitize(part && part.discontinued)}, Hazmat ${sanitize(part && part.hazmat)}, Oversize ${sanitize(part && part.oversize)}</div>
+                <div>Retail Price: $${sanitize(part && part.retailPrice)} | Qty On Hand: ${sanitize(part && part.quantityOnHand)}</div>
         <div style="margin-top:8px;">
-          <button class="btn-primary" data-role="add-to-cart" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && (part.partPrice || part.retailPrice || '0'))}">Add to Cart</button>
+          <button class="btn-primary" data-role="add-to-cart" data-part-number="${escapeAttr(part && part.partNumber)}" data-part-description="${escapeAttr(part && part.partDescription)}" data-price="${escapeAttr(part && (part.retailPrice || part.partPrice || '0'))}">Add to Cart</button>
         </div>
             </div>
         `;
@@ -540,6 +539,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     fetchAndRenderDiagramParts(modelNumber, modelId, diagramId);
+
+    // Auto-scroll to parts list on mobile for better UX
+    if (window.innerWidth <= 900) {
+      setTimeout(() => {
+        const partsContainer = document.getElementById('diagram-parts-container');
+        if (partsContainer) {
+          partsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
   }
 
   function setSelectedCard(diagramId) {
@@ -713,7 +722,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="k">Description</div><div>${sanitize(part && part.partDescription)}</div>
         <div class="k">Price</div><div>$${formatMoney(part && part.retailPrice)}</div>
         <div class="k">On Hand</div><div>${sanitize(part && part.quantityOnHand)}${statusOk ? '' : ' (unverified)'}${!statusOk ? `<span class=\"muted\"> — API retCode ${sanitize(code)}</span>` : ''}</div>
-        <div class="k">Flags</div><div>Disc ${sanitize(part && part.discontinued)} · Haz ${sanitize(part && part.hazmat)} · Ovr ${sanitize(part && part.oversize)}</div>
       </div>
       <div style="display:flex; gap:8px; align-items:center; margin:10px 0;">
         <input id="drawer-qty" type="number" min="1" value="1" style="width:80px; padding:8px; border:1px solid var(--border); border-radius:8px;" />
