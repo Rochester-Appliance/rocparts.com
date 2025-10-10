@@ -824,6 +824,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCartToStorage();
     renderCart();
     updateCartIconBadge();
+    triggerCartPulse();
   }
 
   function updateCartQty(index, delta) {
@@ -940,5 +941,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       floatingCartButton.style.display = 'none';
     }
+  }
+
+  function triggerCartPulse() {
+    const nodes = [];
+    const cartLink = document.getElementById('cart-link');
+    if (cartLink) nodes.push(cartLink);
+    if (floatingCartButton) nodes.push(floatingCartButton);
+    nodes.forEach((el) => {
+      el.classList.remove('is-pulsing');
+      void el.offsetWidth;
+      el.classList.add('is-pulsing');
+      setTimeout(() => el.classList.remove('is-pulsing'), 420);
+    });
   }
 });

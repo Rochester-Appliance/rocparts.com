@@ -620,6 +620,41 @@ button {
     box-shadow: 0 12px 26px rgba(15, 23, 42, 0.2);
 }
 
+.cart-chip.is-pulsing,
+.floating-cart.is-pulsing {
+    animation: cartPulse 0.6s ease;
+}
+
+@keyframes cartPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: var(--shadow-sm);
+    }
+
+    30% {
+        transform: scale(1.12);
+        box-shadow: 0 18px 30px rgba(37, 99, 235, 0.28);
+    }
+
+    55% {
+        transform: scale(0.96);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .cart-chip.is-pulsing,
+    .floating-cart.is-pulsing {
+        animation: none;
+    }
+}
+
 .btn-small {
     padding: 8px 12px;
     border-radius: 10px;
