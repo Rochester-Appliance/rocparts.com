@@ -17,6 +17,8 @@ body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--text-strong);
     background: linear-gradient(180deg, #f9fbff 0%, #f3f6fc 45%, #f8f9fc 100%);
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
 }
 
 :root {
@@ -70,6 +72,7 @@ button {
     min-height: 100vh;
     padding: clamp(32px, 6vw, 64px) clamp(16px, 5vw, 72px);
     overflow-x: hidden;
+    touch-action: pan-y pinch-zoom;
 }
 
 .orb {
@@ -867,6 +870,12 @@ button {
     background: rgba(15, 23, 42, 0.08);
     backdrop-filter: none;
     z-index: 999;
+    display: none;
+    pointer-events: none;
+}
+
+.drawer-overlay[style*="display: block"] {
+    pointer-events: auto;
 }
 
 .drawer {
@@ -883,6 +892,12 @@ button {
     box-shadow: 0 30px 70px rgba(15, 23, 42, 0.16);
     padding: clamp(24px, 4vw, 32px);
     animation: modalIn 0.22s ease;
+    display: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.drawer[style*="display: block"] {
+    display: block;
 }
 
 @keyframes modalIn {
