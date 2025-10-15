@@ -250,10 +250,14 @@ button {
 }
 
 .hero {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: clamp(24px, 5vw, 48px);
     align-items: stretch;
+}
+
+.hero>* {
+    flex: 1 1 minmax(260px, 1fr);
 }
 
 .hero-intro {
@@ -293,7 +297,7 @@ button {
 
 .hero-tags {
     margin-top: clamp(18px, 3vw, 26px);
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     gap: 12px;
 }
@@ -518,10 +522,21 @@ button {
     grid-template-columns: 1fr auto auto auto;
     gap: 12px;
     align-items: center;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border-radius: 14px;
     background: var(--card-soft);
     border: 1px solid var(--border);
+}
+
+.cart-item>div:last-child {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.cart-item .btn-link {
+    white-space: nowrap;
+    min-width: fit-content;
 }
 
 .btn-link {
@@ -764,7 +779,6 @@ button {
     max-height: calc(100vh - 200px);
     overflow-y: auto;
     padding-right: 6px;
-    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -777,6 +791,9 @@ button {
     height: auto;
     display: block;
     object-fit: contain;
+    touch-action: pinch-zoom;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .viewer-title {
@@ -800,9 +817,6 @@ button {
     gap: 10px;
 }
 
-.drawer {
-    overscroll-behavior: contain;
-}
 
 .chip {
     padding: 8px 14px;
@@ -900,6 +914,8 @@ button {
     animation: modalIn 0.22s ease;
     display: none;
     -webkit-overflow-scrolling: touch;
+    z-index: 1000;
+    pointer-events: auto;
 }
 
 .drawer[style*="display: block"] {
@@ -997,6 +1013,12 @@ button {
         max-height: 55vh;
     }
 
+    /* Allow panning when zoomed on mobile */
+    #diagram-viewer .card {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .viewer-title {
         position: static;
     }
@@ -1083,6 +1105,19 @@ button {
         flex-direction: row;
         align-items: center;
         gap: 12px;
+    }
+
+    /* Mobile: Show search bars above hero intro */
+    .hero {
+        flex-direction: column;
+    }
+
+    .hero-intro {
+        order: 2;
+    }
+
+    .hero-search {
+        order: 1;
     }
 
     .hero-intro,

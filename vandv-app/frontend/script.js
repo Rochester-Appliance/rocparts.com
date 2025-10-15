@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <span>Search part</span>
                 </button>
               </div>
-              <p class="search-hint">We search across all manufacturers to find a verified match.</p>
+              <p class="search-hint">We search across most manufacturers to find a verified match.</p>
             </div>
           </div>`;
       }
@@ -379,6 +379,15 @@ document.addEventListener('DOMContentLoaded', () => {
           const modelId = row.getAttribute('data-model-id') || '';
           document.getElementById('selectedModelNumber').value = modelNumber;
           document.getElementById('selectedModelId').value = modelId;
+
+          // Show loading feedback
+          resultsContainer.innerHTML = '<div class="card"><div style="padding: 20px; text-align: center;">Loading diagrams...</div></div>';
+
+          // Scroll to results to show the loading state
+          setTimeout(() => {
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+
           getDiagramsBtn.click();
           const btn = Array.from(tabs).find(b => b.getAttribute('data-tab') === 'diagrams-tab');
           if (btn) btn.click();
@@ -540,12 +549,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     fetchAndRenderDiagramParts(modelNumber, modelId, diagramId);
 
-    // Auto-scroll to parts list on mobile for better UX
+    // Auto-scroll to diagram viewer on mobile for better UX
     if (window.innerWidth <= 900) {
       setTimeout(() => {
-        const partsContainer = document.getElementById('diagram-parts-container');
-        if (partsContainer) {
-          partsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const diagramViewer = document.getElementById('diagram-viewer');
+        if (diagramViewer) {
+          diagramViewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 300);
     }
@@ -711,7 +720,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!overlay || !drawer) return;
     overlay.style.display = 'block';
     drawer.style.display = 'block';
-    overlay.onclick = closeDrawer;
+
+    // Close only when clicking the overlay itself, not the drawer content
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        closeDrawer();
+      }
+    };
     drawer.innerHTML = `
       <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:8px;">
         <h3>Part Details</h3>
