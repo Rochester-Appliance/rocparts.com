@@ -735,8 +735,9 @@ button {
     border-spacing: 0;
     border-radius: 16px;
     overflow: hidden;
-    font-size: 14px;
+    font-size: 15px;
     border: 1px solid var(--border);
+    table-layout: auto;
 }
 
 .table thead {
@@ -746,7 +747,7 @@ button {
 
 .table th,
 .table td {
-    padding: 14px 16px;
+    padding: 16px 18px;
     text-align: left;
     border-bottom: 1px solid var(--border);
 }
@@ -769,8 +770,13 @@ button {
 
 .split {
     display: grid;
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: minmax(320px, 380px) 1fr;
     gap: 16px;
+    align-items: start;
+}
+
+.split>* {
+    min-width: 0;
 }
 
 .grid {
@@ -840,6 +846,22 @@ button {
     position: sticky;
     top: 16px;
     z-index: 5;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+#diagram-parts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#diagram-parts-container .card {
+    overflow-x: auto;
 }
 
 .chip-row {
@@ -1011,7 +1033,7 @@ button {
 }
 
 /* Responsive */
-@media (max-width: 1072px) {
+@media (max-width: 768px) {
     .workspace-grid {
         grid-template-columns: 1fr;
         gap: 20px;
