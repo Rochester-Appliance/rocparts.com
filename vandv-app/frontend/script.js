@@ -184,6 +184,17 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Show loading indicator immediately
+    resultsContainer.innerHTML = '<div class="card"><div style="padding: 20px; text-align: center; font-size: 16px;"><strong>Searching for models...</strong><div style="margin-top: 8px; color: var(--text-muted);">Please wait</div></div></div>';
+
+    // Scroll to results area so user sees the loading message
+    setTimeout(() => {
+      const workspace = document.querySelector('.workspace');
+      if (workspace) {
+        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+
     fetch(`${API_BASE}/api/model-search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
